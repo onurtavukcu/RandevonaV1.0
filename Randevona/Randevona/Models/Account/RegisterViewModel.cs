@@ -26,6 +26,7 @@ public class RegisterViewModel
 
     [Required(ErrorMessage = "E-posta adresinizi girin.")]
     [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
+    [StringLength(254, ErrorMessage = "E-posta en fazla 254 karakter olabilir.")]
     [Display(Name = "E-posta")]
     public string Email { get; set; } = string.Empty;
 

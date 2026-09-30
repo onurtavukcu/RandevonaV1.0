@@ -1,10 +1,9 @@
 using Data.MongoDbContext;
-using Domain.Entities.Notification;
-using Domain.Interfaces.Notification;
 using Domain.Models.Notification.Email;
+using Domain.Entities.Notification;
 using MongoDB.Driver;
 
-namespace Data.Repositories;
+namespace Data.Repositories.MailTemplates;
 
 public class MailTemplateRepository(IControlMongoDbContext context) : IMailTemplateRepository
 {

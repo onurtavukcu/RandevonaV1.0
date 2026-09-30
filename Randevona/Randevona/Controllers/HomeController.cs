@@ -1,11 +1,13 @@
 using Microsoft.AspNetCore.Mvc;
 using Randevona.Models;
+using Microsoft.AspNetCore.Authorization;
 using System.Diagnostics;
 
 namespace Randevona.Controllers
 {
     public class HomeController : Controller
     {
+        [Authorize]
         public IActionResult Index()
         {
             return View();

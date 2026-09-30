@@ -2,7 +2,7 @@ using CommonServices.WorkContext.ContextAccessor;
 using CommonServices.WorkContext.ContextHolderMiddleware;
 using Data.MongoDbContext;
 using Data.MongoDbContext.MongoExtension;
-using Data.Repositories;
+using Data.Repositories.BaseRepositories;
 using Domain.Entities.Appointment;
 using Domain.Entities.Identity.UserEntity;
 using Domain.Models.Identity.Tenant;

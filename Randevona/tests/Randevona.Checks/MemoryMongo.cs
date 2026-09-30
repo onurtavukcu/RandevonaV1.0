@@ -2,6 +2,10 @@ using System.Reflection;
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
+using MongoDB.Driver.Core.Clusters;
+using MongoDB.Driver.Core.Connections;
+using MongoDB.Driver.Core.Servers;
+using System.Net;
 
 // Small in-memory Mongo interface double. Driver filters/updates are rendered to BSON,
 // then applied here. This verifies routing and repository policy, not Mongo server semantics.
@@ -12,11 +16,55 @@ public sealed class MemoryMongo
     public List<(string Db, string Collection, BsonDocument Filter)> Reads { get; } = new();
     public bool FailPing, FailIndexes, DelayPing;
     public int PingCount;
+    public string? FailInsertCollection;
+    public bool FailTransactions;
+    public int TransactionCount;
+    public int TransactionInsertCount;
+    private readonly SemaphoreSlim _transactions = new(1, 1);
     public IMongoClient Client { get; }
     public MemoryMongo()
     {
         Client = InterfaceProxy.Create<IMongoClient>((method, args) =>
-            method.Name == "GetDatabase" ? Database((string)args![0]!) : throw new NotSupportedException(method.Name));
+        {
+            if (method.Name == "GetDatabase") return Database((string)args![0]!);
+            if (method.Name == "StartSessionAsync") return Task.FromResult(Session());
+            throw new NotSupportedException(method.Name);
+        });
+    }
+
+    private IClientSessionHandle Session()
+    {
+        IClientSessionHandle session = null!;
+        session = InterfaceProxy.Create<IClientSessionHandle>((method, args) =>
+        {
+            if (method.Name == "Dispose") return null;
+            if (method.Name == "WithTransactionAsync")
+                return TransactionAsync(session, (Func<IClientSessionHandle, CancellationToken, Task<bool>>)args![0]!,
+                    args.OfType<CancellationToken>().Last());
+            throw new NotSupportedException(method.Name);
+        });
+        return session;
+    }
+
+    // A test double for session usage/rollback. It does not emulate MongoDB transaction retries.
+    private async Task<bool> TransactionAsync(IClientSessionHandle session,
+        Func<IClientSessionHandle, CancellationToken, Task<bool>> callback, CancellationToken ct)
+    {
+        await _transactions.WaitAsync(ct);
+        var snapshot = Documents.ToDictionary(x => x.Key, x => x.Value.Select(d => d.DeepClone().AsBsonDocument).ToList());
+        try
+        {
+            TransactionCount++;
+            if (FailTransactions) throw new InvalidOperationException("Simulated transaction unavailable");
+            return await callback(session, ct);
+        }
+        catch
+        {
+            Documents.Clear();
+            foreach (var pair in snapshot) Documents[pair.Key] = pair.Value;
+            throw;
+        }
+        finally { _transactions.Release(); }
     }
     public List<BsonDocument> Rows(string db, string collection)
     {
@@ -67,7 +115,13 @@ public sealed class MemoryMongo
             var rows = Rows(db, name);
             if (method.Name == "InsertOneAsync")
             {
-                Insert(rows, args[0]!.ToBsonDocument(typeof(T)));
+                if (args.OfType<IClientSessionHandle>().Any()) TransactionInsertCount++;
+                if (name == FailInsertCollection) throw new InvalidOperationException("Simulated insert failure");
+                var document = args.OfType<T>().Single()!.ToBsonDocument();
+                if (Indexes.Contains((db, name, "ux_Users_NormalizedEmail")) &&
+                    rows.Any(row => row["NormalizedEmail"] == document["NormalizedEmail"]))
+                    throw DuplicateKey();
+                Insert(rows, document);
                 return Task.CompletedTask;
             }
             if (method.Name == "InsertManyAsync")
@@ -97,6 +151,9 @@ public sealed class MemoryMongo
                 }
                 if (options?.Skip is int skip) found = found.Skip(skip);
                 if (options?.Limit is int limit && limit > 0) found = found.Take(limit);
+                if (method.GetGenericArguments().Single() == typeof(BsonDocument))
+                    return Task.FromResult<IAsyncCursor<BsonDocument>>(new MemoryCursor<BsonDocument>(
+                        found.Select(row => row.DeepClone().AsBsonDocument).ToArray()));
                 var result = found.Select(row => BsonSerializer.Deserialize<T>(row)).ToArray();
                 return Task.FromResult<IAsyncCursor<T>>(new MemoryCursor<T>(result));
             }
@@ -131,6 +188,15 @@ public sealed class MemoryMongo
     {
         if (rows.Any(x => x["_id"] == row["_id"])) throw new InvalidOperationException("Duplicate _id");
         rows.Add(row);
+    }
+
+    private static MongoWriteException DuplicateKey()
+    {
+        var error = (WriteError)Activator.CreateInstance(typeof(WriteError),
+            BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic, null,
+            [ServerErrorCategory.DuplicateKey, 11000, "Simulated duplicate email", new BsonDocument()], null)!;
+        return new MongoWriteException(new ConnectionId(new ServerId(new ClusterId(),
+            new DnsEndPoint("localhost", 27017))), error, null, null);
     }
     private static BsonValue Value(BsonDocument row, string field)
     {

@@ -1,4 +1,4 @@
-using Data.Repositories;
+using Data.Repositories.BaseRepositories;
 using Domain.Entities.Identity.UserEntity;
 using Domain.Models.Identity.User.Password;
 using Domain.Models.Identity.User.Settings;
@@ -154,7 +154,7 @@ public class PasswordService : IPasswordService
     }
 
     private static bool IsValidPassword(string? password)
-        => !string.IsNullOrWhiteSpace(password) && Encoding.UTF8.GetByteCount(password) <= 72;
+        => PasswordPolicy.IsValid(password);
 
     private static Error InvalidReset() => new("Password.InvalidReset",
         "Şifre sıfırlama isteği geçersiz, süresi dolmuş veya doğrulanmamış.", ErrorType.Validation);

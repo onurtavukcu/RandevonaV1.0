@@ -1,7 +1,7 @@
 using Domain.Entities.BaseEntities;
 using MongoDB.Driver;
 using System.Linq.Expressions;
-namespace Data.Repositories;
+namespace Data.Repositories.BaseRepositories;
 public interface IRepository<T> where T : BaseEntity
 {
     Task<T?> GetByIdAsync(string id, CancellationToken ct = default);

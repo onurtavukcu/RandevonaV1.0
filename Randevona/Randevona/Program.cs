@@ -2,6 +2,7 @@ using CommonServices.WorkContext.ContextHolderMiddleware;
 using Data.MongoDbContext.MongoExtension;
 using Domain.Models.Identity.User.Settings;
 using Infrastructure.Extensions;
+using IdentityService.Extensions;
 using Microsoft.AspNetCore.Authentication.Cookies;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
@@ -14,8 +15,10 @@ builder.Services.AddControllersWithViews();
 
 builder.Services.AddAppSettings(builder.Configuration);
 builder.Services.AddMongoPersistence();
+builder.Services.AddIdentityServices();
 
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>();
+var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
+    ?? throw new InvalidOperationException("JwtSettings configuration is required.");
 
 builder.Services
     .AddAuthentication(options =>
@@ -80,6 +83,7 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseRouting();
 
+app.UseAuthentication();
 app.UseMiddleware<TenantWorkContextMiddleware>();
 app.UseAuthorization();
 
@@ -87,7 +91,7 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
+    pattern: "{controller=Account}/{action=Login}/{id?}")
     .WithStaticAssets();
 
 app.Run();

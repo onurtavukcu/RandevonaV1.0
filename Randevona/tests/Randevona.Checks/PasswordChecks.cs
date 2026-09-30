@@ -1,5 +1,6 @@
 using Data.MongoDbContext;
 using Data.Repositories;
+using Data.Repositories.BaseRepositories;
 using Domain.Entities.Identity.UserEntity;
 using Domain.Models.Identity.User.Password;
 using Domain.Models.Identity.User.Settings;

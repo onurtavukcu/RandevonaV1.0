@@ -1,8 +1,10 @@
 using CommonServices.WorkContext.ContextAccessor;
 using CommonServices.WorkContext.ContextHolderMiddleware;
 using Data.MongoDataEncryption;
-using Data.Repositories;
-using Domain.Interfaces.Notification;
+using Data.Repositories.BaseRepositories;
+using Data.Repositories.Identity.Login;
+using Data.Repositories.Identity.Registration;
+using Data.Repositories.MailTemplates;
 using Domain.Models.MongoEncriyption;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
@@ -29,6 +31,8 @@ namespace Data.MongoDbContext.MongoExtension
             services.AddScoped<ITenantWorkContextResolver, TenantWorkContextResolver>();
             services.AddScoped<ITenantDatabaseResolver, TenantDatabaseResolver>();
             services.AddScoped<TenantProvisioningService>();
+            services.AddScoped<IRegistrationRepository, RegistrationRepository>();
+            services.AddScoped<ILoginRepository, LoginRepository>();
             services.AddScoped<IMongoDbContext, MongoDbContext>();
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped(typeof(IScopedRepository<>), typeof(ScopedRepository<>));

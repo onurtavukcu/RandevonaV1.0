@@ -6,7 +6,7 @@ using Domain.Models.Shared.WorkContext;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
-namespace Data.Repositories;
+namespace Data.Repositories.BaseRepositories;
 
 public class ScopedRepository<T> : Repository<T>, IScopedRepository<T> where T : TenantBaseEntity
 {

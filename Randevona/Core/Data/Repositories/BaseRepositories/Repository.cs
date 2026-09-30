@@ -5,7 +5,7 @@ using MongoDB.Bson.Serialization;
 using MongoDB.Driver;
 using System.Linq.Expressions;
 
-namespace Data.Repositories;
+namespace Data.Repositories.BaseRepositories;
 
 public class Repository<T> : IRepository<T> where T : BaseEntity
 {

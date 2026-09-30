@@ -7,7 +7,7 @@ dotnet run --project tests/Randevona.Checks/Randevona.Checks.csproj
 dotnet run --project tests/Randevona.Checks/Randevona.Checks.csproj -- --late-map
 ```
 
-İlk komut 105 çevrimdışı kontrol, ikinci komut ayrı süreçte geç şifreleme eşlemesi kontrolü çalıştırır. Gerçek veritabanı bağlantısı açılmaz. Mongo arayüzleri bellek içi test nesneleriyle değiştirilir. Gerçek Mongo indeks davranışı ve Atlas erişimi bu testin kapsamı dışındadır.
+İlk komut 125 çevrimdışı kontrol, ikinci komut ayrı süreçte geç şifreleme eşlemesi kontrolü çalıştırır. Gerçek veritabanı bağlantısı açılmaz. Mongo arayüzleri bellek içi test nesneleriyle değiştirilir. Gerçek Mongo indeks davranışı ve Atlas erişimi bu testin kapsamı dışındadır.
 
 ## Uygulama davranışı
 
@@ -42,7 +42,15 @@ Tenant DB seçimi, şube sınırları, scoped yazma ve provisioning tekrarları 
 - Şifre değiştirme ve token tüketme tek koşullu Mongo güncellemesidir. Eşzamanlılık kontrolü, iki isteğin aynı geçerli kaydı okuduğu durumla sınanır; bellek içi test gerçek Mongo sunucu testinin yerine geçmez.
 - Mail gönderim bloğu şimdilik yorumdadır. ForgotPassword yalnızca merkezi Users kaydında sıfırlama isteği oluşturur ve reset token döndürür. Doğrulama kodu yanıt veya log içine yazılmaz; testler kodu bellek içi test kaydından okur.
 - Mail servisi tamamlanana kadar kullanıcıya kod teslimi ve uçtan uca şifremi unuttum akışı hazır değildir. Kod doğrulama, süre, deneme sınırı ve tek kullanımlık token kontrolleri korunur. Mail testleri yeniden etkinleştirme aşamasında geri eklenecek.
-- Web uygulamasına IdentityService proje referansı, IPasswordService DI kaydı ve endpoint bağlantıları sonraki entegrasyon adımıdır. PasswordService JwtSettings, IRepository<Users> ve ILogger<PasswordService> alır; mail servisi almaz. Bu kontroller servisleri doğrudan oluşturur.
+- Web IdentityService projesine referans verir; AddIdentityServices password/register servislerini scoped kaydeder. PasswordService JwtSettings, IRepository<Users> ve ILogger<PasswordService> alır; mail servisi almaz. Register formu bağlandı; login ve password-reset endpoint bağlantıları sonraki adımdır.
 - Endpoint eklenirken sıfırlama isteği hız sınırı, kullanıcı varlığını açığa çıkarmayan yanıtlar ve şifre değişiminden sonra mevcut oturumların iptali ele alınmalıdır.
 
 
+
+## Register kontrolleri
+
+RegisterChecks gerçek RegisterService, RegistrationRepository ve TenantProvisioningService sınıflarını bellek içi Mongo arayüzleriyle çalıştırır. Doğrulama, normalizasyon, password hashing, tenant/şube ilişkileri, onay bekleyen kullanıcının erişim reddi, aynı e-posta yarışı, iki insert'in aynı session kullanması, ikinci insert hatasında rollback, transaction yokken hata verme ve provisioning tekrarını kontrol eder.
+
+MemoryMongo transaction davranışını yalnız test amacıyla taklit eder; gerçek sunucunun transaction retry/commit, indeks ve eşzamanlılık davranışını doğrulamaz. Atlas/replica-set üzerinde entegrasyon testi ayrıca yapılmalıdır. Kayıt transaction gerektirir; standalone Mongo için atomikliği bozan bir fallback yoktur.
+
+HTTP sınırı ayrıca geçici, DB bağlantısız host ve sahte kayıt servisiyle kontrol edildi: kök adres login yönlendirmesi, Home için auth challenge, register POST sonrası onay bekleme sayfası, oturum açılmaması ve CSRF reddi. Bu kontrol gerçek Atlas'a kayıt yapıldığı anlamına gelmez.

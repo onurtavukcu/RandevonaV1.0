@@ -2,7 +2,7 @@
 //{
 //    public class MailTemplateSeeder
 //    {
-//        public static class MailTemplateMigrationSeeder // TODO: REMOVE SEEDER GET EMAIL TYPES FROM EXTERNAL SOURCE (JSON, XML, ETC) INSTEAD OF HARD-CODING.
+//        public static class MailTemplateMigrationSeeder // 
 //        {
 //            public static async Task SeedIfEmptyAsync(IMailTemplateRepository mailTemplateRepository)
 //            {

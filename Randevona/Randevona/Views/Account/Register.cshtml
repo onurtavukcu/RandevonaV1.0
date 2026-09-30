@@ -6,7 +6,7 @@
 <span class="form-eyebrow">YENİ BİR BAŞLANGIÇ</span>
 <h1 id="account-title">Hesap oluştur</h1>
 <p class="form-intro">Sizi ve işletmenizi tanıyarak başlayalım.</p>
-<p class="preview-notice">Bu ekran hazırlık aşamasında. Henüz hesap oluşturulmuyor.</p>
+<p class="preview-notice">Başvurunuz yönetici onayından sonra kullanıma açılır.</p>
 <form asp-controller="Account" asp-action="Register" method="post">
     <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
     <div class="field-row">
@@ -51,7 +51,7 @@
             <span asp-validation-for="ConfirmPassword" id="confirm-password-error" class="field-error"></span>
         </div>
     </div>
-    <button type="submit" class="btn account-submit">Hesap oluştur <span aria-hidden="true">→</span></button>
+    <button type="submit" class="btn account-submit">Kayıt başvurusu gönder <span aria-hidden="true">→</span></button>
 </form>
 <p class="account-switch">Zaten hesabınız var mı? <a asp-controller="Account" asp-action="Login">Giriş yap</a></p>
 @section Scripts {

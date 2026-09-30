@@ -86,6 +86,7 @@ Reject(() => new MongoSettings { ConnectionString = "mongodb://localhost", Datab
 
 checks += await TenantChecks.RunAsync(Key);
 checks += await PasswordChecks.RunAsync();
+checks += await RegisterChecks.RunAsync(Key);
 Console.WriteLine($"Completed {checks} offline checks; no database connections or writes.");
 
 public class InterfaceProxy : DispatchProxy

@@ -22,16 +22,16 @@
 - Mantıksal silme IsDeleted=true yapar. IsActive sorgudan otomatik gizlenmez; pasif kayıtların yönetimi için erişilebilir kalır, aktif liste isteyen servis açık filtre ekler.
 - Güncelleme TenantId/OrganizationId/CreatedAt alanlarını değiştirmez. Upsert erişilemeyen veya silinmiş mevcut _id ile yeni kayıt açmaya çalışırsa Mongo tekillik kuralı reddeder; geri yükleme yapmaz.
 
-## Register için sıra (henüz register servisi/ekranı uygulanmadı)
+## Register için sıra (servis ve form bağlantısı uygulandı)
 
 1. Formdan işletme, kullanıcının adlandırdığı ilk şube, e-posta ve parola alınır. Rol, TenantId ve DatabaseName formdan atanmaz.
 2. User ve Tenant kimlikleri önceden oluşturulur. Users.TenantId ve Tenants.OwnerUserId karşılıklı atanır.
 3. TenantProvisioningService.PrepareNewTenant(tenant, branchName), sabit DB/ilk şube kimliğini ve ilk şube adını belirler.
 4. Kullanıcı parolası hash'lenir. NormalizedEmail tekilliği merkezde korunur.
-5. Kullanıcı + Pending tenant merkezde birlikte güvenli kaydedilir. Transaction veya kayıt tekrarını güvenli yöneten akış, register aşamasında uygulanacak; bu altyapı tek başına o atomik kaydı sağlamaz.
+5. RegistrationRepository, kullanıcı + Pending tenant kaydını aynı Mongo session/transaction içinde yazar. Kullanıcı normal User rolünde ve PendingApproval durumundadır. NormalizedEmail unique index eşzamanlı kayıtları sınırlar. Mongo transaction desteği gerekir (Atlas/replica set); transaction yoksa kısmi kayıt yapan bir alternatif çalıştırılmaz.
 6. TenantProvisioningService.ProvisionAsync(tenantId): süreli ve atomik alınan işlem sahipliğiyle işletme indekslerini ve ilk şubeyi hazırlar; yalnız başarı sonunda Active yapar.
 7. Hata Failed durumuna geçirilir; DB veya kayıt silinmez. Süreç kapanırsa sahiplik süresi dolduktan sonra aynı DB/şube kimliğiyle tekrar denenebilir.
-8. Tenant Active olmadan işletme ekranlarına oturum/erişim verilmez. Yeniden deneme servisi kullanıcıdan gelen rastgele tenant kimliğine açık endpoint olmamalıdır.
+8. Tenant Active olsa bile kullanıcı PendingApproval kaldığı sürece erişim verilmez. Register otomatik cookie/JWT üretmez. Tenant hazırlığı hata verirse başvuru korunur ve sonuç IsTenantReady=false olur; superadmin onay akışında hazırlık tekrar denenmelidir. Yeniden deneme servisi rastgele tenant kimliğine açık anonim endpoint olmamalıdır.
 
 ## Login için sıra (henüz cookie/JWT giriş servisi uygulanmadı)
 
@@ -43,7 +43,7 @@
 6. Kullanıcı şubesiz kaldıysa ona şube erişimi verilmez. Sonradan şube/kullanıcı eklemek mevcut tenant DB'sinde işlem yapar; yeni DB açmaz.
 7. Platform admininin tenantsız yönetim oturumu ayrı yönetim authorization hattı olarak auth aşamasında tasarlanacak. Bu middleware normal tenant oturumları içindir, platform adminine kendiliğinden bütün DB'leri açmaz.
 
-Program.cs içinde middleware yerleştirildi; cookie/JWT kurulduğunda UseAuthentication bu middleware'den önce eklenmelidir.
+Program.cs sırası UseRouting → UseAuthentication → TenantWorkContextMiddleware → UseAuthorization şeklindedir. Uygulama kökü /account/login adresine yönlenir; Home/Index [Authorize] ile korunur. LoginService henüz uygulanmadı.
 
 ## İndeksler ve işletim
 
@@ -59,4 +59,5 @@ Program.cs içinde middleware yerleştirildi; cookie/JWT kurulduğunda UseAuthen
 
 tests/Randevona.Checks mevcut şifreleme kontrollerine ek olarak iki tenant'ın DB yönlendirmesini, şube sınırlarını, kapsam dışı yazmayı, soft delete/upsert davranışını, başlangıç hatalarını ve provisioning tekrarını bellek içi Mongo arayüzleriyle kontrol eder. Gerçek bağlantı veya DB yazımı yapılmaz.
 
-Sıradaki geliştirme: kayıt/login servislerinde parola doğrulama, merkez kayıt atomikliği, kullanıcı yetkilendirmesi ve bu servislerin çağrılması. Result pattern seçimi ayrıca ele alınacak; mevcut Result sınıfları değiştirilmedi.
+RegisterService mevcut Result<RegisterResponse> yapısıyla formdan çağrılır. Servis doğrulama, parola hash, merkezde atomik kayıt ve tenant hazırlığını yönetir; controller yalnız form/sonuç yönlendirmesi yapar. Sıradaki geliştirme LoginService ve oturum bağlantısıdır. E-posta ve superadmin onay/red ekranı docs/TODO.md içinde ayrı tutulur.
+

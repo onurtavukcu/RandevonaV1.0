@@ -1,7 +1,7 @@
 using Domain.Entities.Notification;
 using Domain.Models.Notification.Email;
 
-namespace Domain.Interfaces.Notification;
+namespace Data.Repositories.MailTemplates;
 
 public interface IMailTemplateRepository
 {
