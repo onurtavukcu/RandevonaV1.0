@@ -1,0 +1,59 @@
+@model Randevona.Models.Account.RegisterViewModel
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Hesap oluştur";
+}
+<span class="form-eyebrow">YENİ BİR BAŞLANGIÇ</span>
+<h1 id="account-title">Hesap oluştur</h1>
+<p class="form-intro">Sizi ve işletmenizi tanıyarak başlayalım.</p>
+<p class="preview-notice">Bu ekran hazırlık aşamasında. Henüz hesap oluşturulmuyor.</p>
+<form asp-controller="Account" asp-action="Register" method="post">
+    <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
+    <div class="field-row">
+        <div class="field">
+            <label asp-for="FirstName" class="form-label"></label>
+            <input asp-for="FirstName" class="form-control" autocomplete="given-name" aria-describedby="first-name-error" />
+            <span asp-validation-for="FirstName" id="first-name-error" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="LastName" class="form-label"></label>
+            <input asp-for="LastName" class="form-control" autocomplete="family-name" aria-describedby="last-name-error" />
+            <span asp-validation-for="LastName" id="last-name-error" class="field-error"></span>
+        </div>
+    </div>
+    <div class="field-row">
+        <div class="field">
+            <label asp-for="CompanyName" class="form-label"></label>
+            <input asp-for="CompanyName" class="form-control" autocomplete="organization" aria-describedby="company-error" />
+            <span asp-validation-for="CompanyName" id="company-error" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="OrganizationName" class="form-label"></label>
+            <input asp-for="OrganizationName" class="form-control" placeholder="Örn. Kadıköy" aria-describedby="branch-help branch-error" />
+            <small id="branch-help" class="field-help">İlk şubenize bir ad verin.</small>
+            <span asp-validation-for="OrganizationName" id="branch-error" class="field-error"></span>
+        </div>
+    </div>
+    <div class="field">
+        <label asp-for="Email" class="form-label"></label>
+        <input asp-for="Email" class="form-control" type="email" autocomplete="username" placeholder="ornek@isletmeniz.com" aria-describedby="email-error" />
+        <span asp-validation-for="Email" id="email-error" class="field-error"></span>
+    </div>
+    <div class="field-row">
+        <div class="field">
+            <label asp-for="Password" class="form-label"></label>
+            <input asp-for="Password" class="form-control" autocomplete="new-password" aria-describedby="password-error" />
+            <span asp-validation-for="Password" id="password-error" class="field-error"></span>
+        </div>
+        <div class="field">
+            <label asp-for="ConfirmPassword" class="form-label"></label>
+            <input asp-for="ConfirmPassword" class="form-control" autocomplete="new-password" aria-describedby="confirm-password-error" />
+            <span asp-validation-for="ConfirmPassword" id="confirm-password-error" class="field-error"></span>
+        </div>
+    </div>
+    <button type="submit" class="btn account-submit">Hesap oluştur <span aria-hidden="true">→</span></button>
+</form>
+<p class="account-switch">Zaten hesabınız var mı? <a asp-controller="Account" asp-action="Login">Giriş yap</a></p>
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

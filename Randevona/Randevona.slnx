@@ -1,0 +1,15 @@
+<Solution>
+  <Folder Name="/Core/">
+    <Project Path="Core/Data/Data.csproj" />
+    <Project Path="Core/Domain/Domain.csproj" />
+    <Project Path="Core/Infrastructure/Infrastructure.csproj" />
+  </Folder>
+  <Folder Name="/Services/">
+    <Project Path="Services/CommonServices/CommonServices.csproj" />
+    <Project Path="Services/IdentityService/IdentityService.csproj" Id="25b0caf5-a117-4f1e-bc3b-f9f0b3ae80f1" />
+  </Folder>
+  <Folder Name="/Tests/">
+    <Project Path="tests/Randevona.Checks/Randevona.Checks.csproj" />
+  </Folder>
+  <Project Path="Randevona/Randevona.csproj" />
+</Solution>

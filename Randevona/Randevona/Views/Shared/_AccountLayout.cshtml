@@ -1,0 +1,35 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Randevona</title>
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/account.css" asp-append-version="true" />
+</head>
+<body>
+    <header class="account-header">
+        <a class="account-brand" asp-controller="Home" asp-action="Index" aria-label="Randevona ana sayfa">
+            <span class="brand-mark" aria-hidden="true">r.</span> Randevona
+        </a>
+        <span class="header-caption">Randevular için daha fazla kolaylık.</span>
+    </header>
+    <main class="account-shell">
+        <aside class="account-story" aria-label="Randevona hakkında">
+            <span class="story-label">İŞLETMENİZE ZAMAN KAZANDIRIN</span>
+            <h2>Randevular bir yerde.<br />Aklınız işinizde.</h2>
+            <p>Müşterilerinizle WhatsApp üzerinden buluşun. Randevularınızı, ekibinizi ve şubelerinizi aynı yerden yönetin.</p>
+            <div class="story-note">
+                <span class="note-icon" aria-hidden="true">✓</span>
+                <div><strong>İşletmenize göre bir başlangıç</strong><p>İster tek şube, ister büyüyen bir ekip.</p></div>
+            </div>
+        </aside>
+        <section class="account-card" aria-labelledby="account-title">
+            @RenderBody()
+        </section>
+    </main>
+    <footer class="account-footer">Randevona · Randevu yönetimi</footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
