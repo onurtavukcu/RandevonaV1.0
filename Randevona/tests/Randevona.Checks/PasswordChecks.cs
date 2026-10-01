@@ -28,7 +28,7 @@ public static class PasswordChecks
         const string db = "PasswordChecks";
         var mongo = new MemoryMongo();
         var control = new ControlMongoDbContext(mongo.Client,
-            new MongoSettings { ConnectionString = "mongodb://127.0.0.1:1", DatabaseName = db });
+            new MongoSettings { ConnectionString = "mongodb://127.0.0.1:1", DatabaseName = db, TenantDatabasePrefix = "randevona_dev" });
         var repository = new Repository<Users>(control);
 
         var settings = new JwtSettings { Key = new string('k', 48), Issuer = "checks", Audience = "checks" };
@@ -114,3 +114,4 @@ public static class PasswordChecks
         return count;
     }
 }
+

@@ -4,40 +4,41 @@ namespace Randevona.Models.Account;
 
 public class RegisterViewModel
 {
-    [Required(ErrorMessage = "Adınızı girin.")]
-    [StringLength(100, ErrorMessage = "Ad en fazla 100 karakter olabilir.")]
-    [Display(Name = "Ad")]
+    [Required(ErrorMessage = "Enter your first name.")]
+    [StringLength(100, ErrorMessage = "First name must not exceed 100 characters.")]
+    [Display(Name = "First name")]
     public string FirstName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Soyadınızı girin.")]
-    [StringLength(100, ErrorMessage = "Soyad en fazla 100 karakter olabilir.")]
-    [Display(Name = "Soyad")]
+    [Required(ErrorMessage = "Enter your last name.")]
+    [StringLength(100, ErrorMessage = "Last name must not exceed 100 characters.")]
+    [Display(Name = "Last name")]
     public string LastName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "İşletme adını girin.")]
-    [StringLength(200, ErrorMessage = "İşletme adı en fazla 200 karakter olabilir.")]
-    [Display(Name = "İşletme adı")]
+    [Required(ErrorMessage = "Enter your business name.")]
+    [StringLength(200, ErrorMessage = "Business name must not exceed 200 characters.")]
+    [Display(Name = "Business name")]
     public string CompanyName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "İlk şubenizin adını girin.")]
-    [StringLength(200, ErrorMessage = "Şube adı en fazla 200 karakter olabilir.")]
-    [Display(Name = "Şube adı")]
+    [Required(ErrorMessage = "Enter your first branch name.")]
+    [StringLength(200, ErrorMessage = "Branch name must not exceed 200 characters.")]
+    [Display(Name = "Branch name")]
     public string OrganizationName { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "E-posta adresinizi girin.")]
-    [EmailAddress(ErrorMessage = "Geçerli bir e-posta adresi girin.")]
-    [StringLength(254, ErrorMessage = "E-posta en fazla 254 karakter olabilir.")]
-    [Display(Name = "E-posta")]
+    [Required(ErrorMessage = "Enter your email address.")]
+    [EmailAddress(ErrorMessage = "Enter a valid email address.")]
+    [StringLength(254, ErrorMessage = "Email address must not exceed 254 characters.")]
+    [Display(Name = "Email")]
     public string Email { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Bir şifre belirleyin.")]
+    [Required(ErrorMessage = "Choose a password.")]
     [DataType(DataType.Password)]
-    [Display(Name = "Şifre")]
+    [Display(Name = "Password")]
     public string Password { get; set; } = string.Empty;
 
-    [Required(ErrorMessage = "Şifrenizi tekrar girin.")]
+    [Required(ErrorMessage = "Confirm your password.")]
     [DataType(DataType.Password)]
-    [Compare(nameof(Password), ErrorMessage = "Şifreler eşleşmiyor.")]
-    [Display(Name = "Şifre tekrarı")]
+    [Compare(nameof(Password), ErrorMessage = "Passwords do not match.")]
+    [Display(Name = "Confirm password")]
     public string ConfirmPassword { get; set; } = string.Empty;
 }
+

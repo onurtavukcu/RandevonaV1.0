@@ -11,8 +11,9 @@ public sealed class TenantWorkContextResolver : ITenantWorkContextResolver
 {
     private readonly IControlMongoDbContext _control;
     private readonly IMongoClient _client;
-    public TenantWorkContextResolver(IControlMongoDbContext control, IMongoClient client)
-        => (_control, _client) = (control, client);
+    private readonly MongoSettings _settings;
+    public TenantWorkContextResolver(IControlMongoDbContext control, IMongoClient client, MongoSettings settings)
+        => (_control, _client, _settings) = (control, client, settings);
 
     public async Task<TenantWorkContext> ResolveAsync(string userId, string tenantId, string? selectedOrganizationId, CancellationToken ct)
     {
@@ -24,7 +25,7 @@ public sealed class TenantWorkContextResolver : ITenantWorkContextResolver
         var tenant = await _control.GetCollection<Tenants>().Find(x => x.Id == tenantId &&
             x.IsActive && !x.IsDeleted && x.ProvisioningStatus == TenantProvisioningStatus.Active)
             .FirstOrDefaultAsync(ct) ?? throw new UnauthorizedAccessException("Tenant is unavailable.");
-        TenantDatabaseNaming.Validate(tenant, _control.Database.DatabaseNamespace.DatabaseName);
+        await TenantDatabaseNaming.ValidateAsync(tenant, _control, _settings.TenantDatabasePrefix, ct);
 
         var branches = _client.GetDatabase(tenant.DatabaseName).GetCollection<Organizations>(nameof(Organizations));
         var filter = Builders<Organizations>.Filter.Where(x => x.TenantId == tenantId && x.IsActive && !x.IsDeleted);

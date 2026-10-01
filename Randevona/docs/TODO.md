@@ -11,3 +11,15 @@ Bu liste, mevcut geliştirme adımından ayrı tutulan ertelenmiş işlerdir.
 ## Register aşamasında uygulanan temel
 
 Yeni hesap normal User rolünde ve PendingApproval durumunda oluşturulur. Kullanıcı ve tenant merkez DB'de aynı transaction ile kaydedilir. Tenant DB/ilk şube hazırlığı ayrı, tekrar edilebilir adımdır; hazırlanmış tenant, kullanıcının onaylandığı anlamına gelmez. Register otomatik giriş veya e-posta gönderimi yapmaz. Onay/red yönetimi ve e-posta teslimi yukarıdaki TODO maddeleridir.
+
+## Login denetiminde kalan işler — 01.10.2026
+
+- [ ] **Giriş/kayıt denemesi sınırları:** Endpoint hız sınırı, hesap başına başarısız giriş takibi ve tekrar deneme politikasını uygula; proxy arkasında gerçek istemci adresini yalnız güvenilir proxy üzerinden çöz.
+- [ ] **Parola değişiminde oturum iptali:** Kullanıcı oturum sürümü/security stamp ile mevcut cookie ve JWT oturumlarını geçersiz kıl. Şu an hesap durumu ve rol değişimi kontrol ediliyor, PasswordHash değişimi mevcut oturumu iptal etmiyor.
+- [ ] **Superadmin ilk kurulum ve yönetim girişi:** Normal tenant girişi aktif işletme/şube gerektiriyor. Tenantsız platform hesabı için ayrı yetkilendirilmiş yönetim hattını ve ilk superadmin oluşturma sürecini kur; public register üzerinden admin oluşturma.
+
+Login, onay bekleyen/reddedilmiş/kapalı hesapları reddeder. Yeni kayıtların otomatik aktif yapılması eklenmedi. E-posta servisi ve onay/red ekranları ertelenmiş durumdadır.
+
+## Application language — 2026-10-02
+
+All application UI text, validation messages, error codes and service responses must be in English. Active account/home views and register/password messages have been updated; existing English login messages are retained. The Web request culture is en-US. User-entered names and the business time zone remain domain data. When the currently commented-out legacy email templates are implemented, use English Randevona content instead of the old templates.

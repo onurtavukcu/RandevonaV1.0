@@ -1,4 +1,4 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
@@ -28,8 +28,18 @@
                         </li>
                     </ul>
                     <div class="d-flex gap-2">
-                        <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Giriş yap</a>
-                        <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Hesap oluştur</a>
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <span class="navbar-text me-2">@User.Identity.Name</span>
+                            <form asp-controller="Account" asp-action="Logout" method="post">
+                                <button type="submit" class="btn btn-outline-secondary">Sign out</button>
+                            </form>
+                        }
+                        else
+                        {
+                            <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Sign in</a>
+                            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Create account</a>
+                        }
                     </div>
                 </div>
             </div>
@@ -52,3 +62,4 @@
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

@@ -25,13 +25,13 @@ public class RegisterService(IRegistrationRepository registrations, IPasswordSer
         var email = request.Email?.Trim() ?? string.Empty;
         if (firstName.Length is < 1 or > 100 || lastName.Length is < 1 or > 100 ||
             companyName.Length is < 1 or > 200 || organizationName.Length is < 1 or > 200)
-            return new Error("Register.InvalidDetails", "Ad, soyad, işletme ve şube bilgilerini kontrol edin.", ErrorType.Validation);
+            return new Error("Register.InvalidDetails", "Check your first name, last name, business name and branch name.", ErrorType.Validation);
         if (email.Length > 254 || !new EmailAddressAttribute().IsValid(email))
-            return new Error("Register.InvalidEmail", "Geçerli bir e-posta adresi girin.", ErrorType.Validation);
+            return new Error("Register.InvalidEmail", "Enter a valid email address.", ErrorType.Validation);
         if (!PasswordPolicy.IsValid(request.Password))
-            return new Error("Register.InvalidPassword", "Şifre boş olamaz ve en fazla 72 UTF-8 bayt olabilir.", ErrorType.Validation);
+            return new Error("Register.InvalidPassword", "Password must not be empty and must be at most 72 UTF-8 bytes.", ErrorType.Validation);
         if (request.Password != request.ConfirmPassword)
-            return new Error("Register.PasswordMismatch", "Şifreler eşleşmiyor.", ErrorType.Validation);
+            return new Error("Register.PasswordMismatch", "Passwords do not match.", ErrorType.Validation);
 
         var normalizedEmail = email.ToUpperInvariant();
         var user = new Users
@@ -45,7 +45,7 @@ public class RegisterService(IRegistrationRepository registrations, IPasswordSer
             OwnerUserId = user.Id,
             CompanyInfos = new CompanyInfos { CompanyName = companyName, ContactEmail = email }
         };
-        TenantProvisioningService.PrepareNewTenant(tenant, organizationName);
+        provisioning.PrepareNewTenant(tenant, organizationName);
         user.TenantId = tenant.Id;
         user.Memberships.Add(new UserOrganizationMembership { OrganizationId = tenant.DefaultOrganizationId });
 
@@ -54,14 +54,21 @@ public class RegisterService(IRegistrationRepository registrations, IPasswordSer
             if (await registrations.EmailExistsAsync(normalizedEmail, ct)) return DuplicateEmail();
             user.PasswordHash = passwords.HashPassword(request.Password);
             // The unique index, not this preliminary lookup, arbitrates concurrent registrations.
-            if (!await registrations.TryCreateAsync(user, tenant, ct)) return DuplicateEmail();
+            if (!await registrations.TryCreateAsync(user, tenant, ct))
+            {
+                if (await registrations.EmailExistsAsync(normalizedEmail, ct)) return DuplicateEmail();
+                if (await registrations.DatabaseNameExistsAsync(tenant.DatabaseName, ct))
+                    return new Error("Register.DatabaseNameExists",
+                        "This business database name is already in use. Choose a different business name.", ErrorType.Conflict);
+                return new Error("Register.PersistenceFailed", "Registration could not be completed. Please try again.", ErrorType.Failure);
+            }
         }
         catch (OperationCanceledException) when (ct.IsCancellationRequested) { throw; }
         catch (Exception ex)
         {
             // Do not expose database errors, submitted fields or credentials in the result/log.
             logger.LogError("Registration persistence failed ({ErrorType}).", ex.GetType().Name);
-            return new Error("Register.PersistenceFailed", "Kayıt işlemi tamamlanamadı. Lütfen tekrar deneyin.", ErrorType.Failure);
+            return new Error("Register.PersistenceFailed", "Registration could not be completed. Please try again.", ErrorType.Failure);
         }
 
         try
@@ -79,5 +86,6 @@ public class RegisterService(IRegistrationRepository registrations, IPasswordSer
     }
 
     private static Error DuplicateEmail() => new("Register.EmailExists",
-        "Bu e-posta adresiyle daha önce bir kayıt yapılmış. Mevcut başvurunuz varsa onay bekliyor olabilir.", ErrorType.Conflict);
+        "This email address is already registered. Your existing application may be awaiting approval.", ErrorType.Conflict);
 }
+

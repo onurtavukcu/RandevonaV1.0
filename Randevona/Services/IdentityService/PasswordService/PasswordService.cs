@@ -71,7 +71,7 @@ public class PasswordService : IPasswordService
         {
             await _mailDefinitionClient.SendByMailDefinitionAsync(new SendMailByDefinitionRequest
             {
-                Locale = "tr-TR", SourceService = "IdentityService", To = [account.Email],
+                Locale = "en-US", SourceService = "IdentityService", To = [account.Email],
                 Variables = new() { ["verificationCode"] = state.VerificationCode },
                 TenantId = account.TenantId, MailCatalogKey = MailCatalogKey.Identity_ForgotPassword
             });
@@ -84,7 +84,7 @@ public class PasswordService : IPasswordService
             await _userRepository.UpdateManyAsync(
                 x => x.Id == account.Id && x.ForgotPassword != null && x.ForgotPassword.ResetToken == state.ResetToken,
                 Builders<Users>.Update.Set(x => x.ForgotPassword, null));
-            return new Error("Password.EmailFailed", "Şifre sıfırlama e-postası gönderilemedi.", ErrorType.Failure);
+            return new Error("Password.EmailFailed", "The password reset email could not be sent.", ErrorType.Failure);
         }
         */
         _logger.LogInformation("Password reset request prepared; email delivery is currently disabled.");
@@ -123,7 +123,7 @@ public class PasswordService : IPasswordService
     {
         ArgumentNullException.ThrowIfNull(request);
         if (!IsValidPassword(request.NewPassword) || request.NewPassword != request.ConfirmPassword)
-            return new Error("Password.InvalidPassword", "Şifreler aynı, boş olmayan ve en fazla 72 UTF-8 bayt uzunluğunda olmalı.", ErrorType.Validation);
+            return new Error("Password.InvalidPassword", "Passwords must match, must not be empty and must be at most 72 UTF-8 bytes.", ErrorType.Validation);
         if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.ResetToken)) return InvalidReset();
         var user = await FindActiveUserAsync(request.Email);
         var state = user?.ForgotPassword;
@@ -157,7 +157,7 @@ public class PasswordService : IPasswordService
         => PasswordPolicy.IsValid(password);
 
     private static Error InvalidReset() => new("Password.InvalidReset",
-        "Şifre sıfırlama isteği geçersiz, süresi dolmuş veya doğrulanmamış.", ErrorType.Validation);
+        "The password reset request is invalid, expired or unverified.", ErrorType.Validation);
 
     private string GeneratePasswordResetToken(string userId, DateTime expiresAt)
     {
@@ -177,4 +177,5 @@ public class PasswordService : IPasswordService
         return tokenHandler.WriteToken(token);
     }
 }
+
 

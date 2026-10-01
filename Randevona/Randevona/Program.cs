@@ -12,13 +12,12 @@ var builder = WebApplication.CreateBuilder(args);
 
 // Add services to the container.
 builder.Services.AddControllersWithViews();
+builder.Services.Configure<RequestLocalizationOptions>(options =>
+    options.SetDefaultCulture("en-US").AddSupportedCultures("en-US").AddSupportedUICultures("en-US"));
 
 builder.Services.AddAppSettings(builder.Configuration);
 builder.Services.AddMongoPersistence();
 builder.Services.AddIdentityServices();
-
-var jwtSettings = builder.Configuration.GetSection("JwtSettings").Get<JwtSettings>()
-    ?? throw new InvalidOperationException("JwtSettings configuration is required.");
 
 builder.Services
     .AddAuthentication(options =>
@@ -47,31 +46,45 @@ builder.Services
         options.AccessDeniedPath = "/account/access-denied";
         options.SlidingExpiration = true;
     })
-    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme, options =>
+    .AddJwtBearer(JwtBearerDefaults.AuthenticationScheme);
+
+// Read the same ISettings instance registered by AddAppSettings; no second configuration binding.
+builder.Services.AddOptions<JwtBearerOptions>(JwtBearerDefaults.AuthenticationScheme)
+    .Configure<JwtSettings>((options, settings) =>
     {
+        settings.Validate();
         options.TokenValidationParameters = new TokenValidationParameters
         {
             ValidateIssuerSigningKey = true,
-            IssuerSigningKey =
-                new SymmetricSecurityKey(
-                    Encoding.UTF8.GetBytes(jwtSettings.Key)),
-
-            ValidateIssuer = true,
-            ValidIssuer = jwtSettings.Issuer,
-
-            ValidateAudience = true,
-            ValidAudience = jwtSettings.Audience,
-
-            ValidateLifetime = true,
+            IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(settings.Key)),
+            ValidateIssuer = true, ValidIssuer = settings.Issuer,
+            ValidateAudience = true, ValidAudience = settings.Audience,
+            ValidateLifetime = true, RequireExpirationTime = true, RequireSignedTokens = true,
+            ValidAlgorithms = [SecurityAlgorithms.HmacSha256], ValidTypes = ["at+jwt"],
             ClockSkew = TimeSpan.Zero
         };
+        options.Events = new JwtBearerEvents
+        {
+            OnTokenValidated = context =>
+            {
+                if (context.Principal?.FindFirst("type")?.Value != "access")
+                    context.Fail("An access token is required.");
+                return Task.CompletedTask;
+            }
+        };
     });
-
-
-
-
-
+builder.Services.AddOptions<CookieAuthenticationOptions>(CookieAuthenticationDefaults.AuthenticationScheme)
+    .Configure<JwtSettings>((options, settings) =>
+    {
+        settings.Validate();
+        options.ExpireTimeSpan = TimeSpan.FromMinutes(settings.DurationInMinutes);
+        options.Cookie.HttpOnly = true;
+        options.Cookie.SecurePolicy = builder.Environment.IsDevelopment()
+            ? CookieSecurePolicy.SameAsRequest : CookieSecurePolicy.Always;
+        options.Cookie.SameSite = SameSiteMode.Lax;
+    });
 var app = builder.Build();
+app.Services.GetRequiredService<JwtSettings>().Validate();
 
 // Configure the HTTP request pipeline.
 if (!app.Environment.IsDevelopment())
@@ -81,6 +94,7 @@ if (!app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+app.UseRequestLocalization();
 app.UseRouting();
 
 app.UseAuthentication();
@@ -91,7 +105,8 @@ app.MapStaticAssets();
 
 app.MapControllerRoute(
     name: "default",
-    pattern: "{controller=Account}/{action=Login}/{id?}")
+    pattern: "{controller}/{action=Index}/{id?}")
     .WithStaticAssets();
 
 app.Run();
+

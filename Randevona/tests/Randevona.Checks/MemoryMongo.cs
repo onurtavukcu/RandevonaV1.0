@@ -121,6 +121,9 @@ public sealed class MemoryMongo
                 if (Indexes.Contains((db, name, "ux_Users_NormalizedEmail")) &&
                     rows.Any(row => row["NormalizedEmail"] == document["NormalizedEmail"]))
                     throw DuplicateKey();
+                if (Indexes.Contains((db, name, "ux_Tenants_DatabaseName")) && document["DatabaseName"].AsString.Length > 0 &&
+                    rows.Any(row => row["DatabaseName"] == document["DatabaseName"]))
+                    throw DuplicateKey();
                 Insert(rows, document);
                 return Task.CompletedTask;
             }

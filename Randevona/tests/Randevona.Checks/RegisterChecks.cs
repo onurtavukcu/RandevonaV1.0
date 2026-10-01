@@ -34,6 +34,7 @@ public static class RegisterChecks
         var fake = new MemoryMongo();
         var configuration = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
+            ["MongoSettings:TenantDatabasePrefix"] = "randevona_dev",
             ["MongoSettings:ConnectionString"] = "mongodb://127.0.0.1:1",
             ["MongoSettings:DatabaseName"] = db,
             ["EncryptionSettings:Key"] = encryptionKey,
@@ -55,7 +56,8 @@ public static class RegisterChecks
         await MongoIndexes.EnsureControlAsync(fake.Database(db), default);
         RegisterRequest Request(string email) => new()
         {
-            FirstName = " Ayşe ", LastName = " Öztürk ", CompanyName = " Örnek İşletme ",
+            FirstName = " Ayşe ", LastName = " Öztürk ", CompanyName = email.Trim().StartsWith("owner@", StringComparison.OrdinalIgnoreCase)
+                ? " Örnek İşletme " : email.Split('@')[0],
             OrganizationName = " Kadıköy ", Email = email, Password = "secret", ConfirmPassword = "secret"
         };
         int UsersCount() => fake.Rows(db, nameof(Users)).Count;
@@ -86,11 +88,18 @@ public static class RegisterChecks
         Check(passwords.VerifyPassword("secret", owner.PasswordHash) && owner.PasswordHash != "secret", "Registered password is hashed");
         Check(tenant.OwnerUserId == owner.Id && owner.TenantId == tenant.Id && owner.Memberships.Single().OrganizationId == tenant.DefaultOrganizationId,
             "User tenant ownership and initial membership agree");
-        Check(tenant.DatabaseName == TenantDatabaseNaming.ForTenant(tenant.Id) && tenant.ProvisioningStatus == TenantProvisioningStatus.Active,
+        Check(tenant.DatabaseName == TenantDatabaseNaming.ForTenant(tenant.Id, "Örnek İşletme", "randevona_dev") && tenant.ProvisioningStatus == TenantProvisioningStatus.Active,
             "Tenant database is prepared independently of approval");
         var branch = BsonSerializer.Deserialize<Organizations>(fake.Rows(tenant.DatabaseName, nameof(Organizations)).Single());
         Check(branch.OrganizationInfos.OrganizationName == "Kadıköy" && branch.TenantId == tenant.Id, "User-named branch is stored in tenant DB");
         Check(fake.TransactionCount == 1 && fake.TransactionInsertCount == 2, "Central user and tenant are inserted with one transaction session");
+        Check(tenant.DatabaseName == "randevona_dev_ornek_isletme", "Database uses Business name, not the initial branch or tenant ID");
+        var duplicateBusiness = Request("another-owner@example.invalid");
+        duplicateBusiness.CompanyName = "ORNEK ISLETME";
+        duplicateBusiness.OrganizationName = "Another branch";
+        var nameConflict = await register.RegisterAsync(duplicateBusiness);
+        Check(nameConflict.Error?.Code == "Register.DatabaseNameExists" && UsersCount() == 1 && TenantsCount() == 1,
+            "Normalized business name conflict returns explicit error and rolls back the new account");
         var resolver = scope.ServiceProvider.GetRequiredService<ITenantWorkContextResolver>();
         var denied = false;
         try { await resolver.ResolveAsync(owner.Id, tenant.Id, branch.Id, default); }
@@ -145,6 +154,16 @@ public static class RegisterChecks
         try { await register.RegisterAsync(Request("cancelled@example.invalid"), cancelled.Token); }
         catch (OperationCanceledException) { cancelledSafely = true; }
         Check(cancelledSafely && UsersCount() == 3, "Cancelled registration performs no writes");
+        readers = 0;
+        gate = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var companyA = Request("company-a@example.invalid");
+        var companyB = Request("company-b@example.invalid");
+        companyA.CompanyName = "Shared Company";
+        companyB.CompanyName = "shared-company";
+        var companyRaces = await Task.WhenAll(racing.RegisterAsync(companyA), racing.RegisterAsync(companyB));
+        Check(companyRaces.Count(x => x.IsSuccess) == 1 && companyRaces.Count(x => x.Error?.Code == "Register.DatabaseNameExists") == 1 &&
+            UsersCount() == 4 && TenantsCount() == 4, "Concurrent business-name conflict has one winner and no orphaned account");
         return count;
     }
 }
+

@@ -1,5 +1,6 @@
 using CommonServices.WorkContext.ContextAccessor;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 
 namespace CommonServices.WorkContext.ContextHolderMiddleware;
@@ -10,7 +11,8 @@ public sealed class TenantWorkContextMiddleware
 
     public async Task InvokeAsync(HttpContext context, ITenantWorkContextResolver resolver, TenantWorkContextHolder holder)
     {
-        if (context.User.Identity?.IsAuthenticated != true)
+        // A revoked or stale session must not prevent reaching login or signing out.
+        if (context.GetEndpoint()?.Metadata.GetMetadata<IAllowAnonymous>() is not null || context.User.Identity?.IsAuthenticated != true)
         {
             await _next(context);
             return;
@@ -28,7 +30,10 @@ public sealed class TenantWorkContextMiddleware
             ?? context.User.FindFirst("organizationId")?.Value;
         try
         {
-            holder.Set(await resolver.ResolveAsync(userId, tenantId, selected, context.RequestAborted));
+            var workContext = await resolver.ResolveAsync(userId, tenantId, selected, context.RequestAborted);
+            if (context.User.FindFirst(ClaimTypes.Role)?.Value != workContext.SystemUserRoleType.ToString())
+                throw new UnauthorizedAccessException("Account role changed; sign in again.");
+            holder.Set(workContext);
         }
         catch (UnauthorizedAccessException)
         {

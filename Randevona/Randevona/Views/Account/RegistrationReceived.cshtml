@@ -1,9 +1,10 @@
 @{
     Layout = "_AccountLayout";
-    ViewData["Title"] = "Başvurunuz alındı";
+    ViewData["Title"] = "Application received";
 }
-<span class="form-eyebrow">BAŞVURUNUZ ALINDI</span>
-<h1 id="account-title">Onay bekleniyor</h1>
-<p class="form-intro">Kayıt başvurunuz alındı. Hesabınız yönetici tarafından onaylandıktan sonra işletmenizi yönetmeye başlayabilirsiniz.</p>
-<p class="preview-notice">Şu an giriş yapamazsınız. Başvurunuzu yeniden göndermenize gerek yok.</p>
-<a class="btn account-submit" asp-controller="Account" asp-action="Login">Giriş ekranına dön <span aria-hidden="true">→</span></a>
+<span class="form-eyebrow">APPLICATION RECEIVED</span>
+<h1 id="account-title">Awaiting approval</h1>
+<p class="form-intro">Your registration has been received. You can start managing your business once an administrator approves your account.</p>
+<p class="preview-notice">You cannot sign in yet. You do not need to submit your application again.</p>
+<a class="btn account-submit" asp-controller="Account" asp-action="Login">Back to sign in <span aria-hidden="true">→</span></a>
+

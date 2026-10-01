@@ -84,9 +84,11 @@ Reject(() => new MongoSettings { ConnectionString = "mongodb://localhost" }.Vali
 Reject(() => new MongoSettings { ConnectionString = "mongodb://localhost", DatabaseName = "Checks",
     StartupTimeoutSeconds = 0 }.Validate(), "Invalid startup timeout rejected");
 
+checks += TenantNamingChecks.Run();
 checks += await TenantChecks.RunAsync(Key);
 checks += await PasswordChecks.RunAsync();
 checks += await RegisterChecks.RunAsync(Key);
+checks += await LoginChecks.RunAsync(Key);
 Console.WriteLine($"Completed {checks} offline checks; no database connections or writes.");
 
 public class InterfaceProxy : DispatchProxy

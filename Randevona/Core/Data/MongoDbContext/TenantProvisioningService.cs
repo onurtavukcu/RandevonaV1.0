@@ -16,13 +16,13 @@ public sealed class TenantProvisioningService
     public TenantProvisioningService(IControlMongoDbContext control, IMongoClient client, MongoSettings settings)
         => (_control, _client, _settings) = (control, client, settings);
 
-    public static void PrepareNewTenant(Tenants tenant, string initialOrganizationName)
+    public void PrepareNewTenant(Tenants tenant, string initialOrganizationName)
     {
         if (string.IsNullOrWhiteSpace(initialOrganizationName))
             throw new ArgumentException("Initial organization name is required.");
         if (!string.IsNullOrEmpty(tenant.DatabaseName) || !string.IsNullOrEmpty(tenant.DefaultOrganizationId))
             throw new InvalidOperationException("Existing tenant mapping cannot be reinitialized.");
-        tenant.DatabaseName = TenantDatabaseNaming.ForTenant(tenant.Id);
+        tenant.DatabaseName = TenantDatabaseNaming.ForTenant(tenant.Id, tenant.CompanyInfos.CompanyName, _settings.TenantDatabasePrefix);
         tenant.DefaultOrganizationId = ObjectId.GenerateNewId().ToString();
         tenant.InitialOrganizationName = initialOrganizationName.Trim();
         tenant.ProvisioningStatus = TenantProvisioningStatus.Pending;
@@ -30,14 +30,14 @@ public sealed class TenantProvisioningService
 
     public async Task ProvisionAsync(string tenantId, CancellationToken ct = default)
     {
-        _ = TenantDatabaseNaming.ForTenant(tenantId);
+        if (!ObjectId.TryParse(tenantId, out _)) throw new ArgumentException("Invalid tenant identifier.", nameof(tenantId));
         _settings.Validate();
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(ct);
         timeout.CancelAfter(TimeSpan.FromSeconds(_settings.StartupTimeoutSeconds));
         var tenants = _control.GetCollection<Tenants>();
         var existing = await tenants.Find(x => x.Id == tenantId && x.IsActive && !x.IsDeleted)
             .FirstOrDefaultAsync(timeout.Token) ?? throw new InvalidOperationException("Tenant not found.");
-        TenantDatabaseNaming.Validate(existing, _control.Database.DatabaseNamespace.DatabaseName);
+        await TenantDatabaseNaming.ValidateAsync(existing, _control, _settings.TenantDatabasePrefix, timeout.Token);
         if (existing.ProvisioningStatus == TenantProvisioningStatus.Active) return;
         if (!ObjectId.TryParse(existing.DefaultOrganizationId, out _) || string.IsNullOrWhiteSpace(existing.InitialOrganizationName))
             throw new InvalidOperationException("Tenant provisioning information is incomplete.");
@@ -60,7 +60,7 @@ public sealed class TenantProvisioningService
             x.ProvisioningLeaseId == leaseId && x.ProvisioningStatus == TenantProvisioningStatus.Provisioning);
         try
         {
-            TenantDatabaseNaming.Validate(acquired, _control.Database.DatabaseNamespace.DatabaseName);
+            await TenantDatabaseNaming.ValidateAsync(acquired, _control, _settings.TenantDatabasePrefix, timeout.Token);
             var database = _client.GetDatabase(acquired.DatabaseName);
             await MongoIndexes.EnsureTenantAsync(database, timeout.Token);
             var branch = new Organizations

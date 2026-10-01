@@ -1,6 +1,5 @@
 using Domain.Models.Identity.User.Login;
 using Domain.Models.Identity.User.Register;
-using Domain.Models.Identity.User.Settings;
 using IdentityService.LoginService;
 using IdentityService.RegisterService;
 using Microsoft.AspNetCore.Authentication;
@@ -15,7 +14,7 @@ namespace Randevona.Controllers;
 [AllowAnonymous]
 [Route("account")]
 [ResponseCache(NoStore = true, Location = ResponseCacheLocation.None)]
-public class AccountController(IRegisterService registerService, ILoginService loginService, JwtSettings jwtSettings) : Controller
+public class AccountController(IRegisterService registerService, ILoginService loginService) : Controller
 {
     [HttpGet("/")]
     public IActionResult Start() => RedirectToAction(nameof(Login));
@@ -30,70 +29,67 @@ public class AccountController(IRegisterService registerService, ILoginService l
 
     [HttpPost("login")]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Login(LoginViewModel model)
+    public async Task<IActionResult> Login(LoginViewModel model, CancellationToken ct)
     {
         model.ReturnUrl = LocalReturnUrl(model.ReturnUrl);
         ModelState.Remove(nameof(model.ReturnUrl));
-
         if (ModelState.IsValid)
         {
-            var result = await loginService.LoginAsync(new LoginRequest
-            {
-                Email = model.Email,
-                Password = model.Password
-            });
-
+            var result = await loginService.LoginAsync(new LoginRequest { Email = model.Email, Password = model.Password }, ct);
             if (result.IsSuccess)
             {
-                var loginResponse = result.Value;
-
-                var claims = new List<Claim>
+                var response = result.Value!;
+                var identity = new ClaimsIdentity(new[]
                 {
-                    new Claim(ClaimTypes.NameIdentifier, loginResponse.UserId),
-                    new Claim(ClaimTypes.Email, loginResponse.Email),
-                    new Claim(ClaimTypes.Name, loginResponse.Email),
-                    new Claim("tenantId", loginResponse.TenantId),
-                    new Claim(ClaimTypes.Role, loginResponse.Role)
-                };
-
-                var identity = new ClaimsIdentity(
-                    claims,
-                    CookieAuthenticationDefaults.AuthenticationScheme);
-
-                var principal = new ClaimsPrincipal(identity);
-
-                await HttpContext.SignInAsync(
-                    CookieAuthenticationDefaults.AuthenticationScheme,
-                    principal,
+                    new Claim(ClaimTypes.NameIdentifier, response.UserId),
+                    new Claim(ClaimTypes.Email, response.Email),
+                    new Claim(ClaimTypes.Name, response.Email),
+                    new Claim("tenantId", response.TenantId),
+                    new Claim("organizationId", response.OrganizationId),
+                    new Claim(ClaimTypes.Role, response.Role)
+                }, CookieAuthenticationDefaults.AuthenticationScheme);
+                ClearAccountCookies();
+                await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity),
                     new AuthenticationProperties
                     {
-                        IsPersistent = false,
-                        AllowRefresh = true
+                        IsPersistent = model.RememberMe, AllowRefresh = true,
+                        IssuedUtc = response.IssuedAtUtc, ExpiresUtc = response.ExpiresAtUtc
                     });
-
-                Response.Cookies.Append(
-                            "token",
-                            loginResponse.Token,
-                            new CookieOptions
-                            {
-                                HttpOnly = true,
-                                Secure = true,
-                                SameSite = SameSiteMode.Strict,
-                                Expires = DateTimeOffset.UtcNow.AddMinutes(jwtSettings.DurationInMinutes)
-                            });
-
+                TempData.Remove("RegistrationSubmitted");
+                if (model.ReturnUrl is not null) return LocalRedirect(model.ReturnUrl);
                 return RedirectToAction("Index", "Home");
             }
-
             ModelState.AddModelError(string.Empty, result.Error!.Message);
         }
-
         model.Password = string.Empty;
         ClearAttemptedPassword(nameof(model.Password));
-
         return View(model);
     }
 
+    [HttpPost("logout")]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Logout()
+    {
+        await HttpContext.SignOutAsync(CookieAuthenticationDefaults.AuthenticationScheme);
+        ClearAccountCookies();
+        TempData.Clear();
+        return RedirectToAction(nameof(Login));
+    }
+
+    [HttpGet("access-denied")]
+    public IActionResult AccessDenied()
+    {
+        Response.StatusCode = StatusCodes.Status403Forbidden;
+        return View();
+    }
+
+    private void ClearAccountCookies()
+    {
+        Response.Cookies.Delete("ActiveOrgId", new CookieOptions { Path = "/" });
+        Response.Cookies.Delete("SelectedOrgId", new CookieOptions { Path = "/" });
+        // Clean up the old JWT cookie. Web authentication uses the protected ASP.NET cookie.
+        Response.Cookies.Delete("token", new CookieOptions { Path = "/", Secure = true, SameSite = SameSiteMode.Strict });
+    }
     [HttpGet("register")]
     public IActionResult Register() => View(new RegisterViewModel());
 
@@ -145,3 +141,4 @@ public class AccountController(IRegisterService registerService, ILoginService l
         }
     }
 }
+

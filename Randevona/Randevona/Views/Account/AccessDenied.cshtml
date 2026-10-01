@@ -1,0 +1,11 @@
+@{
+    Layout = "_AccountLayout";
+    ViewData["Title"] = "Access denied";
+}
+<h1 id="account-title">Access denied</h1>
+<p class="form-intro">You do not have permission to view this page.</p>
+<a asp-controller="Account" asp-action="Login">Back to sign in</a>
+<form asp-controller="Account" asp-action="Logout" method="post" class="mt-3">
+    <button type="submit" class="btn account-submit">Sign out</button>
+</form>
+

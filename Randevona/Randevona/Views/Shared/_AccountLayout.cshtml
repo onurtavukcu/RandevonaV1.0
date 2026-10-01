@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="tr">
+<html lang="en">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -9,27 +9,28 @@
 </head>
 <body>
     <header class="account-header">
-        <a class="account-brand" asp-controller="Home" asp-action="Index" aria-label="Randevona ana sayfa">
+        <a class="account-brand" asp-controller="Home" asp-action="Index" aria-label="Randevona home">
             <span class="brand-mark" aria-hidden="true">r.</span> Randevona
         </a>
-        <span class="header-caption">Randevular için daha fazla kolaylık.</span>
+        <span class="header-caption">Appointments made easier.</span>
     </header>
     <main class="account-shell">
-        <aside class="account-story" aria-label="Randevona hakkında">
-            <span class="story-label">İŞLETMENİZE ZAMAN KAZANDIRIN</span>
-            <h2>Randevular bir yerde.<br />Aklınız işinizde.</h2>
-            <p>Müşterilerinizle WhatsApp üzerinden buluşun. Randevularınızı, ekibinizi ve şubelerinizi aynı yerden yönetin.</p>
+        <aside class="account-story" aria-label="About Randevona">
+            <span class="story-label">SAVE TIME FOR YOUR BUSINESS</span>
+            <h2>Appointments in one place.<br />Focus on your business.</h2>
+            <p>Connect with your customers on WhatsApp. Manage appointments, your team and branches in one place.</p>
             <div class="story-note">
                 <span class="note-icon" aria-hidden="true">✓</span>
-                <div><strong>İşletmenize göre bir başlangıç</strong><p>İster tek şube, ister büyüyen bir ekip.</p></div>
+                <div><strong>A start that fits your business</strong><p>For a single branch or a growing team.</p></div>
             </div>
         </aside>
         <section class="account-card" aria-labelledby="account-title">
             @RenderBody()
         </section>
     </main>
-    <footer class="account-footer">Randevona · Randevu yönetimi</footer>
+    <footer class="account-footer">Randevona · Appointment management</footer>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
+

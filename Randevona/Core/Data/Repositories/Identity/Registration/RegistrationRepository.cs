@@ -10,6 +10,9 @@ public class RegistrationRepository(IControlMongoDbContext control, IMongoClient
     public Task<bool> EmailExistsAsync(string normalizedEmail, CancellationToken ct = default)
         => control.GetCollection<Users>().Find(x => x.NormalizedEmail == normalizedEmail).AnyAsync(ct);
 
+    public Task<bool> DatabaseNameExistsAsync(string databaseName, CancellationToken ct = default)
+        => control.GetCollection<Tenants>().Find(x => x.DatabaseName == databaseName).AnyAsync(ct);
+
     public async Task<bool> TryCreateAsync(Users user, Tenants tenant, CancellationToken ct = default)
     {
         if (user.TenantId != tenant.Id || tenant.OwnerUserId != user.Id)

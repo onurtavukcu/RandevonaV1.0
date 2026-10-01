@@ -39,10 +39,11 @@ public static class TenantChecks
         var a2 = ObjectId.GenerateNewId().ToString();
         var b1 = ObjectId.GenerateNewId().ToString();
         var userId = ObjectId.GenerateNewId().ToString();
-        var dbA = TenantDatabaseNaming.ForTenant(a);
-        var dbB = TenantDatabaseNaming.ForTenant(b);
+        var dbA = TenantDatabaseNaming.ForTenant(a, "Tenant A", "randevona_dev");
+        var dbB = TenantDatabaseNaming.ForTenant(b, "Tenant B", "randevona_dev");
         var config = new ConfigurationBuilder().AddInMemoryCollection(new Dictionary<string, string?>
         {
+            ["MongoSettings:TenantDatabasePrefix"] = "randevona_dev",
             ["MongoSettings:ConnectionString"] = "mongodb://127.0.0.1:1",
             ["MongoSettings:DatabaseName"] = controlName,
             ["MongoSettings:StartupTimeoutSeconds"] = "1",
@@ -181,8 +182,8 @@ public static class TenantChecks
 
         using var provisionScope = provider.CreateScope();
         var provision = provisionScope.ServiceProvider.GetRequiredService<TenantProvisioningService>();
-        var newTenant = new Tenants { OwnerUserId = userId };
-        TenantProvisioningService.PrepareNewTenant(newTenant, "Kadıköy");
+        var newTenant = new Tenants { OwnerUserId = userId, CompanyInfos = new() { CompanyName = "Örnek İşletme" } };
+        provision.PrepareNewTenant(newTenant, "Kadıköy");
         fake.Seed(controlName, newTenant);
         fake.FailIndexes = true;
         await Reject(() => provision.ProvisionAsync(newTenant.Id), "Provisioning failure reported");
@@ -195,8 +196,8 @@ public static class TenantChecks
         Check(firstBranch["OrganizationInfos"]["OrganizationName"] == "Kadıköy", "User-supplied first branch name preserved");
         await provision.ProvisionAsync(newTenant.Id);
         Check(fake.Rows(newTenant.DatabaseName, nameof(Organizations)).Count == 1, "Repeated provisioning does not duplicate branch");
-        var locked = new Tenants { OwnerUserId = userId };
-        TenantProvisioningService.PrepareNewTenant(locked, "İkinci");
+        var locked = new Tenants { OwnerUserId = userId, CompanyInfos = new() { CompanyName = "İkinci İşletme" } };
+        provision.PrepareNewTenant(locked, "İkinci");
         locked.ProvisioningStatus = TenantProvisioningStatus.Provisioning;
         locked.ProvisioningLeaseUntilUtc = DateTime.UtcNow.AddMinutes(1);
         fake.Seed(controlName, locked);
@@ -208,3 +209,4 @@ public static class TenantChecks
         return count;
     }
 }
+

@@ -6,6 +6,7 @@ namespace Data.MongoDbContext
     {
         public string ConnectionString { get; set; } = string.Empty;
         public string DatabaseName { get; set; } = string.Empty;
+        public string TenantDatabasePrefix { get; set; } = string.Empty;
         public int StartupTimeoutSeconds { get; set; } = 30;
 
         public void Validate()
@@ -16,6 +17,7 @@ namespace Data.MongoDbContext
                 throw new InvalidOperationException("MongoSettings:DatabaseName is required.");
             if (StartupTimeoutSeconds < 1 || StartupTimeoutSeconds > 120)
                 throw new InvalidOperationException("MongoSettings:StartupTimeoutSeconds must be between 1 and 120.");
+            TenantDatabaseNaming.ValidatePrefix(TenantDatabasePrefix);
         }
     }
 }

@@ -1,18 +1,17 @@
 @model Randevona.Models.Account.LoginViewModel
 @{
     Layout = "_AccountLayout";
-    ViewData["Title"] = "Giriş yap";
+    ViewData["Title"] = "Sign in";
 }
-<span class="form-eyebrow">TEKRAR HOŞ GELDİNİZ</span>
-<h1 id="account-title">Giriş yap</h1>
-<p class="form-intro">İşletmenizi yönetmek için hesabınıza giriş yapın.</p>
-<p class="preview-notice">Bu ekran hazırlık aşamasında. Henüz oturum açılmıyor.</p>
+<span class="form-eyebrow">WELCOME BACK</span>
+<h1 id="account-title">Sign in</h1>
+<p class="form-intro">Sign in to manage your business.</p>
 <form asp-controller="Account" asp-action="Login" method="post">
     <div asp-validation-summary="ModelOnly" class="validation-summary" role="alert"></div>
     <input asp-for="ReturnUrl" type="hidden" />
     <div class="field">
         <label asp-for="Email" class="form-label"></label>
-        <input asp-for="Email" class="form-control" type="email" autocomplete="username" placeholder="ornek@isletmeniz.com" aria-describedby="email-error" />
+        <input asp-for="Email" class="form-control" type="email" autocomplete="username" placeholder="you@example.com" aria-describedby="email-error" />
         <span asp-validation-for="Email" id="email-error" class="field-error"></span>
     </div>
     <div class="field">
@@ -24,9 +23,10 @@
         <input asp-for="RememberMe" class="form-check-input" />
         <label asp-for="RememberMe" class="form-check-label"></label>
     </div>
-    <button type="submit" class="btn account-submit">Giriş yap <span aria-hidden="true">→</span></button>
+    <button type="submit" class="btn account-submit">Sign in <span aria-hidden="true">→</span></button>
 </form>
-<p class="account-switch">Hesabınız yok mu? <a asp-controller="Account" asp-action="Register">Hesap oluştur</a></p>
+<p class="account-switch">Don't have an account? <a asp-controller="Account" asp-action="Register">Create account</a></p>
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
 }
+
