@@ -1,65 +1,945 @@
-<!DOCTYPE html>
-<html lang="en">
+@using System.Security.Claims
+
+@{
+    var currentController =
+        ViewContext.RouteData.Values["controller"]?.ToString() ?? string.Empty;
+
+    var currentAction =
+        ViewContext.RouteData.Values["action"]?.ToString() ?? string.Empty;
+
+    Func<string, string, bool> isActive = (controller, action) =>
+        string.Equals(
+            currentController,
+            controller,
+            StringComparison.OrdinalIgnoreCase)
+        &&
+        (
+            string.IsNullOrEmpty(action)
+            ||
+            string.Equals(
+                currentAction,
+                action,
+                StringComparison.OrdinalIgnoreCase)
+        );
+
+    // ---------------------------------------------
+    // Header bilgileri
+    // Claim isimlerini kendi auth yapına göre değiştirebilirsin.
+    // ---------------------------------------------
+
+    var tenantName =
+        User.FindFirst("tenantName")?.Value
+        ?? ViewBag.TenantName
+        ?? "Randevona";
+
+    var organizationName =
+        User.FindFirst("organizationName")?.Value
+        ?? ViewBag.OrganizationName
+        ?? "Default Organization";
+
+    var userName =
+        User.FindFirst(ClaimTypes.Name)?.Value
+        ?? User.FindFirst(ClaimTypes.Email)?.Value
+        ?? "User";
+
+    var userEmail =
+        User.FindFirst(ClaimTypes.Email)?.Value
+        ?? string.Empty;
+
+    // ---------------------------------------------
+    // WhatsApp alt menü active durumları
+    // ---------------------------------------------
+
+    var templatesActive =
+        isActive("Template", "TemplateList")
+        || isActive("Template", "CreateTemplate");
+
+    var sendTemplateActive =
+        isActive("Message", "Send")
+        || isActive("Message", "JobStatus");
+
+    var contactActive =
+        isActive("Contact", "GetAllContact")
+        || isActive("Contact", "ImportContactList")
+        || isActive("Contact", "ExportContactList");
+
+    var chatActive =
+        isActive("ChatHistory", "Index");
+
+    var flowActive =
+        isActive("Flow", "CreateFlow")
+        || isActive("Flow", "AllFlows")
+        || isActive("Flow", "Operations")
+        || isActive("Flow", "DataSources");
+
+    var welcomeMessageActive =
+        isActive("Management", "WelcomeMessages");
+
+    var whatsappActive =
+        templatesActive
+        || sendTemplateActive
+        || contactActive
+        || chatActive
+        || flowActive
+        || welcomeMessageActive;
+
+    // ---------------------------------------------
+    // Management
+    // ---------------------------------------------
+
+    var managementActive =
+        isActive("Management", "PlatformSettings")
+        || isActive("SubscriptionPlan", "Index")
+        || isActive("Reports", "Index");
+}
+
+<!doctype html>
+
+<html lang="tr">
+
 <head>
+
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Randevona</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Randevona.styles.css" asp-append-version="true" />
+
+    <meta name="viewport"
+          content="width=device-width, initial-scale=1, viewport-fit=cover" />
+
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+
+    <title>
+        @ViewData["Title"] - Randevona
+    </title>
+
+    <!-- TABLER -->
+    <link href="~/dashboard/dist/css/tabler.css"
+          rel="stylesheet" />
+
+    <link href="~/dashboard/dist/css/tabler-flags.css"
+          rel="stylesheet" />
+
+    <link href="~/dashboard/dist/css/tabler-vendors.css"
+          rel="stylesheet" />
+
+    <link href="~/dashboard/dist/css/tabler-themes.css"
+          rel="stylesheet" />
+
+    <!-- BOOTSTRAP ICONS -->
+    <link rel="stylesheet"
+          href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css" />
+
+    <!-- PROJECT CSS -->
+    <link href="~/css/site.css"
+          rel="stylesheet" />
+
+    @await RenderSectionAsync("Styles", required: false)
+
+    <style>
+
+        /* -------------------------------------------------
+           SIDEBAR
+        ------------------------------------------------- */
+
+        .navbar-vertical {
+            min-width: 250px;
+        }
+
+        .navbar-brand-wrapper {
+            padding: 12px 10px 18px;
+        }
+
+        .navbar-brand-text {
+            font-size: 20px;
+            font-weight: 700;
+            letter-spacing: .2px;
+        }
+
+        .navbar-nav .nav-link {
+            border-radius: 6px;
+            margin: 1px 8px;
+        }
+
+        .navbar-nav .nav-link.active {
+            background: rgba(255,255,255,.08);
+        }
+
+        .navbar-nav .nav-link-icon {
+            width: 26px;
+        }
+
+        /*
+         * Sidebar içindeki dropdown menüler.
+         */
+
+        .navbar-vertical .dropdown-menu {
+            position: static !important;
+            transform: none !important;
+            background: transparent;
+            border: 0;
+            box-shadow: none;
+            margin: 0;
+            padding: 2px 8px 8px 42px;
+        }
+
+        .navbar-vertical .dropdown-item {
+            border-radius: 5px;
+            font-size: .875rem;
+            margin-bottom: 1px;
+            padding: 7px 10px;
+        }
+
+        .navbar-vertical .dropdown-item.active {
+            background: rgba(255,255,255,.08);
+        }
+
+        .navbar-vertical .dropdown-header {
+            padding-left: 10px;
+            padding-top: 12px;
+            padding-bottom: 4px;
+            font-size: .67rem;
+            text-transform: uppercase;
+            opacity: .65;
+            letter-spacing: .06em;
+        }
+
+        .navbar-vertical .dropdown-divider {
+            border-color: rgba(255,255,255,.08);
+            margin: 7px 0;
+        }
+
+        /* -------------------------------------------------
+           TOP BAR
+        ------------------------------------------------- */
+
+        .top-context {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .top-context-item {
+            display: flex;
+            flex-direction: column;
+            line-height: 1.15;
+        }
+
+        .top-context-label {
+            font-size: 10px;
+            color: var(--tblr-secondary);
+            text-transform: uppercase;
+            letter-spacing: .05em;
+        }
+
+        .top-context-value {
+            font-size: 13px;
+            font-weight: 600;
+        }
+
+        .context-divider {
+            width: 1px;
+            height: 28px;
+            background: var(--tblr-border-color);
+        }
+
+        .user-avatar {
+            width: 34px;
+            height: 34px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: var(--tblr-primary);
+            color: #fff;
+            font-weight: 600;
+        }
+
+    </style>
+
 </head>
+
 <body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
+
+    <!-- Theme script mümkün olduğunca body başında -->
+    <script src="~/dashboard/dist/js/tabler-theme.min.js"></script>
+
+
+    <div class="page">
+
+        <!-- =====================================================
+             SIDEBAR
+        ====================================================== -->
+
+        <aside class="navbar navbar-vertical navbar-expand-lg"
+               data-bs-theme="dark">
+
             <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Randevona</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
+
+                <!-- MOBILE TOGGLER -->
+                <button class="navbar-toggler"
+                        type="button"
+                        data-bs-toggle="collapse"
+                        data-bs-target="#sidebar-menu"
+                        aria-controls="sidebar-menu"
+                        aria-expanded="false">
+
                     <span class="navbar-toggler-icon"></span>
+
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <div class="d-flex gap-2">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <span class="navbar-text me-2">@User.Identity.Name</span>
-                            <form asp-controller="Account" asp-action="Logout" method="post">
-                                <button type="submit" class="btn btn-outline-secondary">Sign out</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Sign in</a>
-                            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Create account</a>
-                        }
-                    </div>
+
+
+                <!-- LOGO -->
+
+                <div class="navbar-brand-wrapper">
+
+                    <a href="@Url.Action("Index", "Home")"
+                       class="navbar-brand navbar-brand-autodark d-flex align-items-center text-decoration-none">
+
+                        @* Logo varsa açabilirsin
+
+                        <img src="~/img/randevona-logo.png"
+                             alt="Randevona"
+                             class="navbar-brand-image me-2" />
+
+                        *@
+
+                        <i class="bi bi-calendar2-check-fill me-2"
+                           style="font-size:22px;color:#25D366"></i>
+
+                        <span class="navbar-brand-text text-white">
+                            Randevona
+                        </span>
+
+                    </a>
+
                 </div>
+
+
+                <div class="collapse navbar-collapse"
+                     id="sidebar-menu">
+
+                    <ul class="navbar-nav pt-lg-2">
+
+
+                        <!-- =================================================
+                             HOME
+                        ================================================== -->
+
+                        <li class="nav-item">
+
+                            <a class="nav-link @(isActive("Home", "Index") ? "active" : "")"
+                               href="@Url.Action("Index", "Home")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-house-door-fill"
+                                       style="color:#3b82f6"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    Home
+                                </span>
+
+                            </a>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             LIVE CHAT
+                        ================================================== -->
+
+                        <li class="nav-item">
+
+                            <a class="nav-link @(isActive("LiveChat", "Index") ? "active" : "")"
+                               href="@Url.Action("Index", "LiveChat")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-chat-dots-fill"
+                                       style="color:#25D366"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    Live Chat
+                                </span>
+
+                            </a>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             WHATSAPP
+                        ================================================== -->
+
+                        <li class="nav-item dropdown @(whatsappActive ? "active" : "")">
+
+                            <a class="nav-link dropdown-toggle @(whatsappActive ? "active" : "")"
+                               href="#navbar-whatsapp"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="false"
+                               role="button"
+                               aria-expanded="@(whatsappActive ? "true" : "false")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-whatsapp"
+                                       style="color:#25D366"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    WhatsApp
+                                </span>
+
+                            </a>
+
+
+                            <div class="dropdown-menu @(whatsappActive ? "show" : "")"
+                                 id="navbar-whatsapp">
+
+
+                                <!-- =========================
+                                     TEMPLATE
+                                ========================== -->
+
+                                <span class="dropdown-header">
+                                    Template
+                                </span>
+
+                                <a href="@Url.Action("TemplateList", "Template")"
+                                   class="dropdown-item @(isActive("Template", "TemplateList") ? "active" : "")">
+
+                                    <i class="bi bi-list-ul me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    Template List
+
+                                </a>
+
+
+                                <a href="@Url.Action("CreateTemplate", "Template")"
+                                   class="dropdown-item @(isActive("Template", "CreateTemplate") ? "active" : "")">
+
+                                    <i class="bi bi-plus-circle me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    New Template
+
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+
+
+                                <!-- =========================
+                                     SEND TEMPLATE
+                                ========================== -->
+
+                                <span class="dropdown-header">
+                                    Send Template
+                                </span>
+
+
+                                <a href="@Url.Action("Send", "Message")"
+                                   class="dropdown-item @(isActive("Message", "Send") ? "active" : "")">
+
+                                    <i class="bi bi-send-fill me-2"
+                                       style="color:#3b82f6"></i>
+
+                                    Send Template
+
+                                </a>
+
+
+                                <a href="@Url.Action("JobStatus", "Message")"
+                                   class="dropdown-item @(isActive("Message", "JobStatus") ? "active" : "")">
+
+                                    <i class="bi bi-hourglass-split me-2"
+                                       style="color:#f59e0b"></i>
+
+                                    Job Status
+
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+
+
+                                <!-- =========================
+                                     CONTACT
+                                ========================== -->
+
+                                <span class="dropdown-header">
+                                    Contact
+                                </span>
+
+
+                                <a href="@Url.Action("GetAllContact", "Contact")"
+                                   class="dropdown-item @(isActive("Contact", "GetAllContact") ? "active" : "")">
+
+                                    <i class="bi bi-people-fill me-2"
+                                       style="color:#14b8a6"></i>
+
+                                    Contact List
+
+                                </a>
+
+
+                                <a href="@Url.Action("ImportContactList", "Contact")"
+                                   class="dropdown-item @(isActive("Contact", "ImportContactList") ? "active" : "")">
+
+                                    <i class="bi bi-upload me-2"
+                                       style="color:#14b8a6"></i>
+
+                                    Import Contact
+
+                                </a>
+
+
+                                <a href="@Url.Action("ExportContactList", "Contact")"
+                                   class="dropdown-item @(isActive("Contact", "ExportContactList") ? "active" : "")">
+
+                                    <i class="bi bi-download me-2"
+                                       style="color:#14b8a6"></i>
+
+                                    Export Contact
+
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+
+
+                                <!-- =========================
+                                     CHAT
+                                ========================== -->
+
+                                <span class="dropdown-header">
+                                    Chat
+                                </span>
+
+
+                                <a href="@Url.Action("Index", "ChatHistory")"
+                                   class="dropdown-item @(chatActive ? "active" : "")">
+
+                                    <i class="bi bi-clock-history me-2"
+                                       style="color:#64748b"></i>
+
+                                    Chat History
+
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+
+
+                                <!-- =========================
+                                     FLOW
+                                ========================== -->
+
+                                <span class="dropdown-header">
+                                    Flow
+                                </span>
+
+
+                                <a href="@Url.Action("CreateFlow", "Flow")"
+                                   class="dropdown-item @(isActive("Flow", "CreateFlow") ? "active" : "")">
+
+                                    <i class="bi bi-plus-circle me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    Create Flow
+
+                                </a>
+
+
+                                <a href="@Url.Action("AllFlows", "Flow")"
+                                   class="dropdown-item @(isActive("Flow", "AllFlows") ? "active" : "")">
+
+                                    <i class="bi bi-diagram-3-fill me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    All Flows
+
+                                </a>
+
+
+                                <a href="@Url.Action("Operations", "Flow")"
+                                   class="dropdown-item @(isActive("Flow", "Operations") ? "active" : "")">
+
+                                    <i class="bi bi-gear-fill me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    Flow Operation
+
+                                </a>
+
+
+                                <a href="@Url.Action("DataSources", "Flow")"
+                                   class="dropdown-item @(isActive("Flow", "DataSources") ? "active" : "")">
+
+                                    <i class="bi bi-database-fill me-2"
+                                       style="color:#8b5cf6"></i>
+
+                                    Data Sources
+
+                                </a>
+
+
+                                <div class="dropdown-divider"></div>
+
+
+                                <!-- =========================
+                                     WELCOME MESSAGES
+                                ========================== -->
+
+                                <a href="@Url.Action("WelcomeMessages", "Management")"
+                                   class="dropdown-item @(welcomeMessageActive ? "active" : "")">
+
+                                    <i class="bi bi-chat-square-heart-fill me-2"
+                                       style="color:#ec4899"></i>
+
+                                    Welcome Messages
+
+                                </a>
+
+                            </div>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             CONNECTIONS
+                        ================================================== -->
+
+                        <li class="nav-item">
+
+                            <a class="nav-link @(isActive("WabaOverview", "Overview") ? "active" : "")"
+                               href="@Url.Action("Overview", "WabaOverview")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-link-45deg"
+                                       style="color:#0ea5e9"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    Connections
+                                </span>
+
+                            </a>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             USAGE BILLING
+                        ================================================== -->
+
+                        <li class="nav-item">
+
+                            <a class="nav-link @(isActive("Subscription", "My") ? "active" : "")"
+                               href="@Url.Action("My", "Subscription")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-credit-card-fill"
+                                       style="color:#f59e0b"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    Usage &amp; Billing
+                                </span>
+
+                            </a>
+
+                        </li>
+
+
+                        <!-- =================================================
+                             MANAGEMENT
+                        ================================================== -->
+
+                        <li class="nav-item dropdown @(managementActive ? "active" : "")">
+
+                            <a class="nav-link dropdown-toggle @(managementActive ? "active" : "")"
+                               href="#navbar-management"
+                               data-bs-toggle="dropdown"
+                               data-bs-auto-close="false"
+                               role="button"
+                               aria-expanded="@(managementActive ? "true" : "false")">
+
+                                <span class="nav-link-icon d-md-none d-lg-inline-block">
+
+                                    <i class="bi bi-sliders"
+                                       style="color:#f97316"></i>
+
+                                </span>
+
+                                <span class="nav-link-title">
+                                    Management
+                                </span>
+
+                            </a>
+
+
+                            <div class="dropdown-menu @(managementActive ? "show" : "")"
+                                 id="navbar-management">
+
+
+                                <a href="@Url.Action("PlatformSettings", "Management")"
+                                   class="dropdown-item @(isActive("Management", "PlatformSettings") ? "active" : "")">
+
+                                    <i class="bi bi-gear-wide-connected me-2"
+                                       style="color:#6366f1"></i>
+
+                                    Platform Settings
+
+                                </a>
+
+
+                                <a href="@Url.Action("Index", "SubscriptionPlan")"
+                                   class="dropdown-item @(isActive("SubscriptionPlan", "Index") ? "active" : "")">
+
+                                    <i class="bi bi-box-seam-fill me-2"
+                                       style="color:#f59e0b"></i>
+
+                                    Package Settings
+
+                                </a>
+
+
+                                <a href="@Url.Action("Index", "Reports")"
+                                   class="dropdown-item @(isActive("Reports", "Index") ? "active" : "")">
+
+                                    <i class="bi bi-bar-chart-fill me-2"
+                                       style="color:#22c55e"></i>
+
+                                    Reports
+
+                                </a>
+
+                            </div>
+
+                        </li>
+
+
+                    </ul>
+
+                </div>
+
             </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
+
+        </aside>
+
+
+        <!-- =====================================================
+             TOP NAVBAR
+        ====================================================== -->
+
+        <header class="navbar navbar-expand-md d-none d-lg-flex d-print-none">
+
+            <div class="container-fluid">
+
+
+                <!-- =================================================
+                     TENANT / ORGANIZATION
+                ================================================== -->
+
+                <div class="top-context">
+
+                    <div class="top-context-item">
+
+                        <span class="top-context-label">
+                            Tenant
+                        </span>
+
+                        <span class="top-context-value">
+
+                            <i class="bi bi-building me-1"></i>
+
+                            @tenantName
+
+                        </span>
+
+                    </div>
+
+
+                    <div class="context-divider"></div>
+
+
+                    <div class="top-context-item">
+
+                        <span class="top-context-label">
+                            Organization
+                        </span>
+
+                        <span class="top-context-value">
+
+                            <i class="bi bi-diagram-3 me-1"></i>
+
+                            @organizationName
+
+                        </span>
+
+                    </div>
+
+                </div>
+
+
+                <!-- =================================================
+                     RIGHT SIDE
+                ================================================== -->
+
+                <div class="navbar-nav flex-row order-md-last ms-auto">
+
+
+                    <!-- THEME -->
+
+                    <div class="nav-item d-none d-md-flex me-3">
+
+                        <a href="?theme=dark"
+                           class="nav-link px-0 hide-theme-dark"
+                           title="Dark mode"
+                           data-bs-toggle="tooltip">
+
+                            <i class="bi bi-moon-stars-fill"></i>
+
+                        </a>
+
+
+                        <a href="?theme=light"
+                           class="nav-link px-0 hide-theme-light"
+                           title="Light mode"
+                           data-bs-toggle="tooltip">
+
+                            <i class="bi bi-sun-fill"></i>
+
+                        </a>
+
+                    </div>
+
+
+                    <!-- USER -->
+
+                    <div class="nav-item dropdown">
+
+                        <a href="#"
+                           class="nav-link d-flex lh-1 text-reset p-0"
+                           data-bs-toggle="dropdown"
+                           aria-label="Open user menu">
+
+                            <div class="user-avatar">
+
+                                @{
+                                    var firstLetter = !string.IsNullOrWhiteSpace(userName)
+                                        ? userName.Substring(0, 1).ToUpperInvariant()
+                                        : "U";
+                                }
+
+                                @firstLetter
+
+                            </div>
+
+
+                            <div class="d-none d-xl-block ps-2">
+
+                                <div>
+                                    @userName
+                                </div>
+
+                                @if (!string.IsNullOrWhiteSpace(userEmail))
+                                {
+                                    <div class="mt-1 small text-secondary">
+                                        @userEmail
+                                    </div>
+                                }
+
+                            </div>
+
+                        </a>
+
+
+                        <div class="dropdown-menu dropdown-menu-end dropdown-menu-arrow">
+
+
+                            <a href="@Url.Action("Index", "Profile")"
+                               class="dropdown-item">
+
+                                <i class="bi bi-person me-2"></i>
+
+                                Profile
+
+                            </a>
+
+
+                            <a href="@Url.Action("Index", "Settings")"
+                               class="dropdown-item">
+
+                                <i class="bi bi-gear me-2"></i>
+
+                                Settings
+
+                            </a>
+
+
+                            <div class="dropdown-divider"></div>
+
+
+                            <form asp-controller="Account"
+                                  asp-action="Logout"
+                                  method="post">
+
+                                @Html.AntiForgeryToken()
+
+                                <button type="submit"
+                                        class="dropdown-item text-danger">
+
+                                    <i class="bi bi-box-arrow-right me-2"></i>
+
+                                    Logout
+
+                                </button>
+
+                            </form>
+
+                        </div>
+
+                    </div>
+
+
+                </div>
+
+            </div>
+
+        </header>
+
+
+        <!-- =====================================================
+             PAGE BODY
+        ====================================================== -->
+
+        <div class="page-wrapper">
+
             @RenderBody()
-        </main>
+
+        </div>
+
     </div>
 
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Randevona - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-        </div>
-    </footer>
-    <script src="~/lib/jquery/dist/jquery.min.js"></script>
-    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
-    @await RenderSectionAsync("Scripts", required: false)
-</body>
-</html>
 
+    <!-- =========================================================
+         SCRIPTS
+    ========================================================== -->
+
+    <script src="~/dashboard/dist/js/tabler.min.js"></script>
+
+    @await RenderSectionAsync("Scripts", required: false)
+
+</body>
+
+</html>
