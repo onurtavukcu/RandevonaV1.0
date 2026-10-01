@@ -15,12 +15,19 @@ public sealed class TenantWorkContextResolver : ITenantWorkContextResolver
     public TenantWorkContextResolver(IControlMongoDbContext control, IMongoClient client, MongoSettings settings)
         => (_control, _client, _settings) = (control, client, settings);
 
+    public async Task ValidatePlatformAdminAsync(string userId, CancellationToken ct)
+    {
+        if (!ObjectId.TryParse(userId, out _) || !await _control.GetCollection<Users>().Find(x => x.Id == userId &&
+            x.SystemRole == SystemUserRoleType.SuperAdmin && x.IsActive && !x.IsDeleted && x.UserStatus == UserStatus.Active).AnyAsync(ct))
+            throw new UnauthorizedAccessException("Platform administrator access is unavailable.");
+    }
+
     public async Task<TenantWorkContext> ResolveAsync(string userId, string tenantId, string? selectedOrganizationId, CancellationToken ct)
     {
         if (!ObjectId.TryParse(userId, out _) || !ObjectId.TryParse(tenantId, out _))
             throw new UnauthorizedAccessException("Invalid account context.");
         var user = await _control.GetCollection<Users>().Find(x => x.Id == userId &&
-            x.TenantId == tenantId && x.IsActive && !x.IsDeleted && x.UserStatus == UserStatus.Active)
+            x.TenantId == tenantId && x.SystemRole == SystemUserRoleType.User && x.IsActive && !x.IsDeleted && x.UserStatus == UserStatus.Active)
             .FirstOrDefaultAsync(ct) ?? throw new UnauthorizedAccessException("Account is unavailable.");
         var tenant = await _control.GetCollection<Tenants>().Find(x => x.Id == tenantId &&
             x.IsActive && !x.IsDeleted && x.ProvisioningStatus == TenantProvisioningStatus.Active)

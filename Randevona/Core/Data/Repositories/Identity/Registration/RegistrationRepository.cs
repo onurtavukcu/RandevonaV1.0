@@ -1,5 +1,6 @@
 using Data.MongoDbContext;
 using Domain.Entities.Identity.UserEntity;
+using Domain.Models.Identity.User.UserInformation;
 using MongoDB.Driver;
 
 namespace Data.Repositories.Identity.Registration;
@@ -12,6 +13,32 @@ public class RegistrationRepository(IControlMongoDbContext control, IMongoClient
 
     public Task<bool> DatabaseNameExistsAsync(string databaseName, CancellationToken ct = default)
         => control.GetCollection<Tenants>().Find(x => x.DatabaseName == databaseName).AnyAsync(ct);
+
+    public Task<Users?> FindUserByEmailAsync(string normalizedEmail, CancellationToken ct = default)
+        => control.GetCollection<Users>().Find(x => x.NormalizedEmail == normalizedEmail).FirstOrDefaultAsync(ct)!;
+
+    public async Task ClearSystemAdminTenantAsync(string userId, CancellationToken ct = default)
+    {
+        // Migrate only configured, active platform admins. Keep tenant records and databases intact.
+        await control.GetCollection<Users>().UpdateOneAsync(x => x.Id == userId &&
+            x.SystemRole == SystemUserRoleType.SuperAdmin && x.IsActive && !x.IsDeleted && x.UserStatus == UserStatus.Active,
+            Builders<Users>.Update.Set(x => x.TenantId, null).Set(x => x.HasAllOrganizationAccess, false)
+                .Set(x => x.Memberships, new List<UserOrganizationMembership>()).Set(x => x.UpdatedAt, DateTime.UtcNow),
+            cancellationToken: ct);
+    }
+
+    public async Task<bool> TryCreateUserAsync(Users user, CancellationToken ct = default)
+    {
+        try
+        {
+            await control.GetCollection<Users>().InsertOneAsync(user, cancellationToken: ct);
+            return true;
+        }
+        catch (MongoWriteException ex) when (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+        {
+            return false;
+        }
+    }
 
     public async Task<bool> TryCreateAsync(Users user, Tenants tenant, CancellationToken ct = default)
     {

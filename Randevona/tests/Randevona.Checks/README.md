@@ -8,7 +8,7 @@ dotnet run --project tests/Randevona.Checks/Randevona.Checks.csproj
 dotnet run --project tests/Randevona.Checks/Randevona.Checks.csproj -- --late-map
 ```
 
-İlk komut 170 çevrimdışı kontrol, ikinci komut ayrı süreçte geç şifreleme eşlemesi kontrolü çalıştırır. Gerçek veritabanı bağlantısı açılmaz. Mongo arayüzleri bellek içi test nesneleriyle değiştirilir. Gerçek Mongo indeks davranışı ve Atlas erişimi bu testin kapsamı dışındadır.
+İlk komut 191 çevrimdışı kontrol, ikinci komut ayrı süreçte geç şifreleme eşlemesi kontrolü çalıştırır. Gerçek veritabanı bağlantısı açılmaz. Mongo arayüzleri bellek içi test nesneleriyle değiştirilir. Gerçek Mongo indeks davranışı ve Atlas erişimi bu testin kapsamı dışındadır.
 
 ## Uygulama davranışı
 
@@ -70,3 +70,7 @@ TenantNamingChecks ortam/ana şirket adı adlandırması için 17 kontrol ekler.
 
 RegisterChecks artık Business name kaynaklı IDsiz DB adını, aynı normalize adın reddini ve eşzamanlı isim çakışmasında rollback davranışını da doğrular. MemoryMongo test nesnesi merkez DatabaseName unique indeksini taklit eder; gerçek Mongo entegrasyon testi ayrıca gereklidir.
 
+
+## System administrator startup
+
+SystemAdminChecks adds 21 offline checks for ISettings binding, hosted-service order, fresh DB initialization, normalized email deduplication, password hashing, tenant/branch membership, login, repeat startup without credential/profile changes, additional configured admins, existing customer/deleted-account preservation, invalid settings, customer DB collision, provisioning recovery and transaction rollback. It runs only in this test console project, with MemoryMongo. No real configured admin credentials or Atlas writes are used.

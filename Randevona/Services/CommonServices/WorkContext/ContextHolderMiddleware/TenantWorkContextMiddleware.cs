@@ -1,4 +1,6 @@
 using CommonServices.WorkContext.ContextAccessor;
+using CommonServices.Authorization;
+using Domain.Models.Identity.User.UserInformation;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
@@ -18,8 +20,35 @@ public sealed class TenantWorkContextMiddleware
             return;
         }
         var userId = context.User.FindFirst(ClaimTypes.NameIdentifier)?.Value ?? context.User.FindFirst("sub")?.Value;
+        if (string.IsNullOrWhiteSpace(userId))
+        {
+            context.Response.StatusCode = StatusCodes.Status401Unauthorized;
+            return;
+        }
+        if (context.GetEndpoint()?.Metadata.GetMetadata<PlatformAdminAttribute>() is not null)
+        {
+            try
+            {
+                if (!context.User.IsInRole(nameof(SystemUserRoleType.SuperAdmin)))
+                    throw new UnauthorizedAccessException("Platform administrator role is required.");
+                await resolver.ValidatePlatformAdminAsync(userId, context.RequestAborted);
+            }
+            catch (UnauthorizedAccessException)
+            {
+                context.Response.StatusCode = StatusCodes.Status403Forbidden;
+                return;
+            }
+            // No tenant WorkContext: management does not grant implicit access to tenant repositories.
+            await _next(context);
+            return;
+        }
+        if (context.User.IsInRole(nameof(SystemUserRoleType.SuperAdmin)))
+        {
+            context.Response.StatusCode = StatusCodes.Status403Forbidden;
+            return;
+        }
         var tenantId = context.User.FindFirst("tenantId")?.Value;
-        if (string.IsNullOrWhiteSpace(userId) || string.IsNullOrWhiteSpace(tenantId))
+        if (string.IsNullOrWhiteSpace(tenantId))
         {
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;

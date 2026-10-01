@@ -73,3 +73,17 @@ RegisterService mevcut Result<RegisterResponse> yapısıyla formdan çağrılır
 - 170 çevrimdışı kontrol geçti; adlandırma, isim çakışması, Türkçe karakterler, uzunluk sınırı, ortam/tenant reddi, eski eşleme ve register/login/provisioning davranışları test edildi. Solution build: 0 hata, 0 uyarı.
 
 Kullanıcının netleştirdiği son biçim: Business name = Test → randevona_dev_test. Önceki ID ekli üretim kaldırıldı. Aynı DB adıyla iki kayıt yarışırsa merkezi unique indeks ve kayıt transaction'ı tek kazananı korur; kaybeden kullanıcı/tenant kaydı bırakılmaz. Servis Register.DatabaseNameExists koduyla İngilizce bir çakışma mesajı döndürür. Eski ID ekli mevcut DB'ler otomatik taşınmadı; bu değişiklik yeni kayıt üretimini düzeltir.
+
+## SystemAdminSettings and startup initialization
+
+SystemAdminSettings implements the existing ISettings interface. AddAppSettings discovers it by class/section name; no manual configuration binding is required. Existing settings keys are preserved: Emails (array), DefaultPassword, TenantName and OrganizationName. Optional FirstName/LastName default to System/Administrator.
+
+AddIdentityServices registers SystemAdminSeeder and SystemAdminInitializerHostedService. Program registers AddMongoPersistence before AddIdentityServices, so Mongo connectivity and the unique central indexes are prepared before account seeding. If the section is absent or Emails is empty, seeding is skipped. Configured setup failures stop startup; MongoSettings.StartupTimeoutSeconds bounds the initialization. Concurrent host-start configuration has not been enabled.
+
+For each distinct normalized email, the existing central Users record is checked, including deleted records. Existing passwords, roles, names and account states are never overwritten. Existing non-admin, inactive or deleted accounts are left unchanged and a warning is logged. New accounts are Active/SuperAdmin, receive a BCrypt password hash, tenant ID, first-branch membership and HasAllOrganizationAccess=true. No approval email is required for trusted startup configuration.
+
+The first missing admin and its new tenant are inserted in the existing central transaction. TenantName supplies CompanyInfos.CompanyName, so the DB name remains randevona_dev_<company-name> without an ID suffix. OrganizationName supplies the first branch name. Additional configured admins share this system tenant. An existing customer tenant with the same DB name is rejected. A previous failed/pending preparation is retried for an existing active admin without recreating the account.
+
+This keeps the current tenant-based login working for the bootstrap admin; it does not implement a tenantless management session or cross-customer management access. SystemAdminSettings is a deployment/startup setting, not a public registration request. Changing DefaultPassword later does not reset existing passwords. A new server pointing to the same DB reuses existing records; an empty DB is initialized when the app starts, provided the configured Mongo connection supports registration transactions.
+
+Verification: solution build succeeded with 0 warnings and 0 errors; 191 offline checks passed. No real Atlas administrator was inserted during implementation.
