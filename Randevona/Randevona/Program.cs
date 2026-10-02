@@ -101,7 +101,8 @@ app.UseAuthentication();
 app.UseMiddleware<TenantWorkContextMiddleware>();
 app.UseAuthorization();
 
-app.MapStaticAssets();
+// Public UI assets must not pass through tenant/account resolution.
+app.MapStaticAssets().AllowAnonymous().ShortCircuit();
 
 app.MapControllerRoute(
     name: "default",

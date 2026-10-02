@@ -25,7 +25,10 @@ public sealed class TenantWorkContextMiddleware
             context.Response.StatusCode = StatusCodes.Status401Unauthorized;
             return;
         }
-        if (context.GetEndpoint()?.Metadata.GetMetadata<PlatformAdminAttribute>() is not null)
+        var platformEndpoint = context.GetEndpoint()?.Metadata.GetMetadata<PlatformAdminAttribute>() is not null;
+        var sharedPage = context.GetEndpoint()?.Metadata.GetMetadata<WorkspacePageAttribute>() is not null
+            && HttpMethods.IsGet(context.Request.Method);
+        if (platformEndpoint || (sharedPage && context.User.IsInRole(nameof(SystemUserRoleType.SuperAdmin))))
         {
             try
             {

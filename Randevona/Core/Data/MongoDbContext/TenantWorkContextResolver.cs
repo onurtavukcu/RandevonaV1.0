@@ -48,6 +48,8 @@ public sealed class TenantWorkContextResolver : ITenantWorkContextResolver
         var selected = !string.IsNullOrWhiteSpace(selectedOrganizationId) ? selectedOrganizationId
             : allowedIds.Contains(tenant.DefaultOrganizationId) ? tenant.DefaultOrganizationId
             : allowedIds.FirstOrDefault() ?? string.Empty;
-        return new TenantWorkContext(tenantId, selected, userId, user.SystemRole, user.HasAllOrganizationAccess, Array.AsReadOnly(allowedIds));
+        return new TenantWorkContext(tenantId, selected, userId, user.SystemRole, user.HasAllOrganizationAccess,
+            Array.AsReadOnly(allowedIds), TenantName: tenant.CompanyInfos.CompanyName,
+            OrganizationName: accessible.FirstOrDefault(x => x.Id == selected)?.OrganizationInfos.OrganizationName);
     }
 }

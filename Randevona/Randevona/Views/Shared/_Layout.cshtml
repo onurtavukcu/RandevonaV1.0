@@ -1,65 +1,69 @@
+@using Domain.Models.Identity.User.UserInformation
+@inject CommonServices.WorkContext.ContextHolderMiddleware.TenantWorkContextHolder ContextHolder
+@{
+    var admin = User.IsInRole(nameof(SystemUserRoleType.SuperAdmin));
+    var workspace = ContextHolder.Value;
+    var tenantName = admin ? "Platform administration" : workspace?.TenantName ?? "Workspace";
+    var organizationName = admin ? "No business selected" : workspace?.OrganizationName ?? "Organization";
+    var signedIn = User.Identity?.IsAuthenticated == true;
+    var accountName = User.Identity?.Name ?? "Guest";
+    var initial = accountName.Length > 0 ? accountName[..1].ToUpperInvariant() : "R";
+}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>@ViewData["Title"] - Randevona</title>
-    <script type="importmap"></script>
-    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
-    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
-    <link rel="stylesheet" href="~/Randevona.styles.css" asp-append-version="true" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>@ViewData["Title"] · Randevona</title>
+    <link rel="stylesheet" href="~/lib/tabler/tabler.min.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/css/workspace.css" asp-append-version="true" />
+    @await RenderSectionAsync("Styles", required: false)
 </head>
-<body>
-    <header>
-        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light bg-white border-bottom box-shadow mb-3">
-            <div class="container-fluid">
-                <a class="navbar-brand" asp-area="" asp-controller="Home" asp-action="Index">Randevona</a>
-                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse" aria-controls="navbarSupportedContent"
-                        aria-expanded="false" aria-label="Toggle navigation">
-                    <span class="navbar-toggler-icon"></span>
+<body class="workspace">
+    <a class="skip-link" href="#main-content">Skip to content</a>
+    <div class="app-shell">
+        <partial name="_Sidebar" />
+        <button class="sidebar-backdrop" type="button" aria-label="Close navigation" tabindex="-1"></button>
+        <div class="workspace-main">
+            <header class="workspace-topbar">
+                <button class="sidebar-toggle icon-button" type="button" aria-label="Open navigation" aria-controls="workspace-sidebar" aria-expanded="false">
+                    <partial name="_NavIcon" model='@("menu")' />
                 </button>
-                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
-                    <ul class="navbar-nav flex-grow-1">
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Index">Home</a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-link text-dark" asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
-                        </li>
-                    </ul>
-                    <div class="d-flex gap-2">
-                        @if (User.Identity?.IsAuthenticated == true)
-                        {
-                            <span class="navbar-text me-2">@User.Identity.Name</span>
-                            <form asp-controller="Account" asp-action="Logout" method="post">
-                                <button type="submit" class="btn btn-outline-secondary">Sign out</button>
-                            </form>
-                        }
-                        else
-                        {
-                            <a class="btn btn-outline-secondary" asp-controller="Account" asp-action="Login">Sign in</a>
-                            <a class="btn btn-primary" asp-controller="Account" asp-action="Register">Create account</a>
-                        }
-                    </div>
+                <div class="workspace-context">
+                    <span class="context-icon"><partial name="_NavIcon" model='@("building")' /></span>
+                    <div class="context-value"><span class="context-label">@(admin ? "Workspace" : "Tenant")</span><strong title="@tenantName">@tenantName</strong></div>
+                    <span class="context-divider"></span>
+                    <div class="context-value organization-context"><span class="context-label">Organization</span><strong title="@organizationName">@organizationName</strong></div>
                 </div>
-            </div>
-        </nav>
-    </header>
-    <div class="container">
-        <main role="main" class="pb-3">
-            @RenderBody()
-        </main>
-    </div>
-
-    <footer class="border-top footer text-muted">
-        <div class="container">
-            &copy; 2026 - Randevona - <a asp-area="" asp-controller="Home" asp-action="Privacy">Privacy</a>
+                <div class="topbar-account">
+                    <span class="language-label">EN</span>
+                    <span class="account-avatar" aria-hidden="true">@initial</span>
+                    <div class="account-details"><strong title="@accountName">@accountName</strong><span>@(admin ? "Super administrator" : "Business account")</span></div>
+                    @if (signedIn)
+                    {
+                        <form asp-controller="Account" asp-action="Logout" method="post">
+                            <button class="icon-button" type="submit" aria-label="Sign out" title="Sign out"><partial name="_NavIcon" model='@("logout")' /></button>
+                        </form>
+                    }
+                    else
+                    {
+                        <a asp-controller="Account" asp-action="Login" class="btn btn-sm">Sign in</a>
+                    }
+                </div>
+            </header>
+            <main id="main-content" class="workspace-content" tabindex="-1">
+                <div class="page-heading">
+                    <div class="page-pretitle">@(ViewData["Section"] ?? "Workspace")</div>
+                    <h1>@ViewData["Title"]</h1>
+                </div>
+                @RenderBody()
+            </main>
+            <footer class="workspace-footer"><span>© @DateTime.UtcNow.Year Randevona</span><a asp-controller="Home" asp-action="Privacy">Privacy</a></footer>
         </div>
-    </footer>
+    </div>
     <script src="~/lib/jquery/dist/jquery.min.js"></script>
     <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
-    <script src="~/js/site.js" asp-append-version="true"></script>
+    <script src="~/js/workspace.js" asp-append-version="true"></script>
     @await RenderSectionAsync("Scripts", required: false)
 </body>
 </html>
-

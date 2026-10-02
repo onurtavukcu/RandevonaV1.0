@@ -16,12 +16,14 @@ Yeni hesap normal User rolünde ve PendingApproval durumunda oluşturulur. Kulla
 
 - [ ] **Giriş/kayıt denemesi sınırları:** Endpoint hız sınırı, hesap başına başarısız giriş takibi ve tekrar deneme politikasını uygula; proxy arkasında gerçek istemci adresini yalnız güvenilir proxy üzerinden çöz.
 - [ ] **Parola değişiminde oturum iptali:** Kullanıcı oturum sürümü/security stamp ile mevcut cookie ve JWT oturumlarını geçersiz kıl. Şu an hesap durumu ve rol değişimi kontrol ediliyor, PasswordHash değişimi mevcut oturumu iptal etmiyor.
-- [x] **Superadmin ilk kurulumu:** SystemAdminSettings modelinden, Mongo başlangıcından sonra yalnız eksik e-postalar için Active/SuperAdmin kullanıcı ve yapılandırılmış sistem tenant/şubesi hazırlanır. Mevcut hesapların rolü, parolası ve durumu değiştirilmez; public register admin oluşturmaz.
-- [ ] **Superadmin yönetim bölümü:** Management ekranları ve rol kontrollü endpointleri ekle. İlk kurulum mevcut login ile çalışmak için yapılandırılmış sistem tenant/şubesini kullanır. Tenantsız platform oturumu ve müşteri tenant seçimi henüz uygulanmadı.
+- [x] **Superadmin ilk kurulumu:** SystemAdminSettings ile merkez Users içinde tenantsız Active/SuperAdmin oluşturulur. Tenant/şube/DB oluşturulmaz. Ayarlı aktif eski adminlerin tenant ve şube bağlantısı kaldırılır; mevcut DB ve tenant kayıtları korunur. Mevcut parola, rol ve hesap durumu değiştirilmez.
+- [ ] **Superadmin yönetim bölümü:** Tenantsız giriş, korumalı /management ve boş Platform Settings / Package Settings / Reports ekranları tamamlandı. Başvuru onay/red, tenant listeleme, ayarlar ve açık yetkilendirmeyle müşteri tenant seçimi henüz yapılmadı. Platform rolü otomatik tenant erişimi vermez.
 
 Login, onay bekleyen/reddedilmiş/kapalı hesapları reddeder. Yeni kayıtların otomatik aktif yapılması eklenmedi. E-posta servisi ve onay/red ekranları ertelenmiş durumdadır.
 
 ## Application language — 2026-10-02
 
 All application UI text, validation messages, error codes and service responses must be in English. Active account/home views and register/password messages have been updated; existing English login messages are retained. The Web request culture is en-US. User-entered names and the business time zone remain domain data. When the currently commented-out legacy email templates are implemented, use English Randevona content instead of the old templates.
+
+
 

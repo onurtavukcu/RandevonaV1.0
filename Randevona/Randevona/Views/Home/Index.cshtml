@@ -1,9 +1,19 @@
 @{
     ViewData["Title"] = "Home";
+    ViewData["Section"] = "Overview";
 }
-
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>You are signed in to your Randevona account.</p>
+<section class="welcome-panel">
+    <div><span class="welcome-eyebrow">YOUR WORKSPACE</span><h2>Welcome to Randevona</h2><p>Manage your WhatsApp conversations and appointments in one place.</p></div>
+    <a asp-controller="Connections" asp-action="Index" class="btn btn-primary">Manage connections <partial name="_NavIcon" model='@("arrow")' /></a>
+</section>
+<div class="section-heading"><h2>Quick access</h2><span>Your everyday tools</span></div>
+<div class="workspace-cards">
+    @foreach (var item in new[] {
+        ("LiveChat", "Index", "Livechat", "Your customer conversations.", "chat"),
+        ("Template", "TemplateList", "Templates", "Your WhatsApp message templates.", "template"),
+        ("Contact", "GetAllContact", "Contacts", "Your customer contact lists.", "contacts"),
+        ("Flow", "AllFlows", "Flows", "Your appointment experiences.", "flow") })
+    {
+        <a class="card workspace-card" asp-controller="@item.Item1" asp-action="@item.Item2"><span class="tool-icon"><partial name="_NavIcon" model="item.Item5" /></span><h3>@item.Item3</h3><p>@item.Item4</p><span class="card-link">Open <partial name="_NavIcon" model='@("arrow")' /></span></a>
+    }
 </div>
-

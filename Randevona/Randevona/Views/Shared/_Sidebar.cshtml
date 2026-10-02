@@ -1,0 +1,59 @@
+@{
+    var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
+    var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
+    bool Active(string c, string a = "Index") => controller.Equals(c, StringComparison.OrdinalIgnoreCase) && action.Equals(a, StringComparison.OrdinalIgnoreCase);
+    var groups = new[]
+    {
+        (Label: "Template", Controller: "Template", Links: new[] { ("TemplateList", "Template List"), ("CreateTemplate", "New Template") }),
+        (Label: "Send Template", Controller: "Message", Links: new[] { ("SentTemplates", "Sent Templates"), ("JobStatus", "Job Status") }),
+        (Label: "Contact", Controller: "Contact", Links: new[] { ("GetAllContact", "Contact List"), ("ImportContactList", "Import Contacts"), ("ExportContactList", "Export Contacts") }),
+        (Label: "Chat", Controller: "ChatHistory", Links: new[] { ("Index", "Chat History") }),
+        (Label: "Flow", Controller: "Flow", Links: new[] { ("CreateFlow", "Create Flow"), ("AllFlows", "All Flows"), ("Operations", "Flow Operation"), ("DataSources", "Data Sources") })
+    };
+    var whatsappActive = groups.Any(x => x.Controller.Equals(controller, StringComparison.OrdinalIgnoreCase)) || controller == "WelcomeMessages";
+}
+<aside class="workspace-sidebar" id="workspace-sidebar" aria-label="Main navigation">
+    <a class="workspace-brand" asp-controller="Home" asp-action="Index"><span class="brand-mark">r.</span><span>Randevona</span></a>
+    <div class="sidebar-caption">WORKSPACE</div>
+    <nav class="sidebar-nav" aria-label="Workspace">
+        <a class="menu-link @(Active("Home") ? "active" : "")" asp-controller="Home" asp-action="Index" aria-current="@(Active("Home") ? "page" : null)"><partial name="_NavIcon" model='@("home")' /><span>Home</span></a>
+        <a class="menu-link @(Active("LiveChat") ? "active" : "")" asp-controller="LiveChat" asp-action="Index" aria-current="@(Active("LiveChat") ? "page" : null)"><partial name="_NavIcon" model='@("chat")' /><span>Livechat</span></a>
+        <details class="menu-group whatsapp-group" open="@whatsappActive">
+            <summary class="menu-link @(whatsappActive ? "section-active" : "")"><partial name="_NavIcon" model='@("whatsapp")' /><span>WhatsApp</span><span class="menu-chevron" aria-hidden="true"></span></summary>
+            <div class="submenu">
+                @foreach (var group in groups)
+                {
+                    <details class="menu-subgroup" open="@(controller.Equals(group.Controller, StringComparison.OrdinalIgnoreCase))">
+                        <summary>@group.Label<span class="menu-chevron" aria-hidden="true"></span></summary>
+                        <div class="submenu-links">
+                            @foreach (var link in group.Links)
+                            {
+                                <a class="submenu-link @(Active(group.Controller, link.Item1) ? "active" : "")" asp-controller="@group.Controller" asp-action="@link.Item1" aria-current="@(Active(group.Controller, link.Item1) ? "page" : null)">@link.Item2</a>
+                            }
+                        </div>
+                    </details>
+                }
+                <a class="submenu-link welcome-link @(Active("WelcomeMessages") ? "active" : "")" asp-controller="WelcomeMessages" asp-action="Index" aria-current="@(Active("WelcomeMessages") ? "page" : null)">Welcome Messages</a>
+            </div>
+        </details>
+        <div class="menu-separator"></div>
+        @foreach (var item in new[] { ("Connections", "link"), ("Usage", "chart"), ("Billing", "card") })
+        {
+            <a class="menu-link @(Active(item.Item1) ? "active" : "")" asp-controller="@item.Item1" asp-action="Index" aria-current="@(Active(item.Item1) ? "page" : null)"><partial name="_NavIcon" model="item.Item2" /><span>@item.Item1</span></a>
+        }
+        @if (User.IsInRole(nameof(Domain.Models.Identity.User.UserInformation.SystemUserRoleType.SuperAdmin)))
+        {
+            <div class="sidebar-caption management-caption">ADMINISTRATION</div>
+            <details class="menu-group" open="@(controller == "Management")">
+                <summary class="menu-link @(controller == "Management" ? "section-active" : "")"><partial name="_NavIcon" model='@("settings")' /><span>Management</span><span class="menu-chevron" aria-hidden="true"></span></summary>
+                <div class="submenu management-links">
+                    @foreach (var item in new[] { ("PlatformSettings", "Platform Settings"), ("PackageSettings", "Package Settings"), ("Reports", "Reports") })
+                    {
+                        <a class="submenu-link @(Active("Management", item.Item1) ? "active" : "")" asp-controller="Management" asp-action="@item.Item1" aria-current="@(Active("Management", item.Item1) ? "page" : null)">@item.Item2</a>
+                    }
+                </div>
+            </details>
+        }
+    </nav>
+    <div class="sidebar-footer"><span class="sidebar-dot"></span><span>Appointments made easier.</span></div>
+</aside>

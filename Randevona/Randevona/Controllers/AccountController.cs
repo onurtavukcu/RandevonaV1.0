@@ -1,5 +1,6 @@
 using Domain.Models.Identity.User.Login;
 using Domain.Models.Identity.User.Register;
+using Domain.Models.Identity.User.UserInformation;
 using IdentityService.LoginService;
 using IdentityService.RegisterService;
 using Microsoft.AspNetCore.Authentication;
@@ -44,10 +45,10 @@ public class AccountController(IRegisterService registerService, ILoginService l
                     new Claim(ClaimTypes.NameIdentifier, response.UserId),
                     new Claim(ClaimTypes.Email, response.Email),
                     new Claim(ClaimTypes.Name, response.Email),
-                    new Claim("tenantId", response.TenantId),
-                    new Claim("organizationId", response.OrganizationId),
                     new Claim(ClaimTypes.Role, response.Role)
                 }, CookieAuthenticationDefaults.AuthenticationScheme);
+                if (response.TenantId is not null) identity.AddClaim(new Claim("tenantId", response.TenantId));
+                if (response.OrganizationId is not null) identity.AddClaim(new Claim("organizationId", response.OrganizationId));
                 ClearAccountCookies();
                 await HttpContext.SignInAsync(CookieAuthenticationDefaults.AuthenticationScheme, new ClaimsPrincipal(identity),
                     new AuthenticationProperties
@@ -56,6 +57,8 @@ public class AccountController(IRegisterService registerService, ILoginService l
                         IssuedUtc = response.IssuedAtUtc, ExpiresUtc = response.ExpiresAtUtc
                     });
                 TempData.Remove("RegistrationSubmitted");
+                if (response.Role == nameof(SystemUserRoleType.SuperAdmin))
+                    return RedirectToAction("Index", "Management");
                 if (model.ReturnUrl is not null) return LocalRedirect(model.ReturnUrl);
                 return RedirectToAction("Index", "Home");
             }

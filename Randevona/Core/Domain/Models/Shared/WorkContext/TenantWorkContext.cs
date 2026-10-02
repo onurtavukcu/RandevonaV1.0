@@ -10,5 +10,7 @@ namespace Domain.Models.Shared.WorkContext
          bool HasAllOrganizationAccess = false,
          IReadOnlyList<string>? AllowedOrganizationIds = null,
          string? PhoneNumberId = null,
-         string? HomeTenantId = null);
+         string? HomeTenantId = null,
+         string? TenantName = null,
+         string? OrganizationName = null);
 }

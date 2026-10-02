@@ -9,7 +9,7 @@
 </head>
 <body>
     <header class="account-header">
-        <a class="account-brand" asp-controller="Home" asp-action="Index" aria-label="Randevona home">
+        <a class="account-brand" asp-controller="@(User.IsInRole("SuperAdmin") ? "Management" : "Home")" asp-action="Index" aria-label="Randevona home">
             <span class="brand-mark" aria-hidden="true">r.</span> Randevona
         </a>
         <span class="header-caption">Appointments made easier.</span>

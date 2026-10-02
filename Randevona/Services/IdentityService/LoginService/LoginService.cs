@@ -37,21 +37,33 @@ public class LoginService(ILoginRepository loginRepository, IPasswordService pas
                 return new Error("Login.PendingApproval", "Your Application Is Pending Approval.", ErrorType.Validation);
             if (user.UserStatus != UserStatus.Active || !Enum.IsDefined(user.SystemRole))
                 return new Error("Login.InactiveAccount", "Your Account Is Inactive.", ErrorType.Validation);
-            if (string.IsNullOrWhiteSpace(user.TenantId))
-                return new Error("Login.TenantUnavailable", "Your Account Is Not Associated With A Tenant.", ErrorType.Validation);
-
-            // Validate persisted tenant mapping, account status and accessible branches before issuing a session.
-            var context = await contextResolver.ResolveAsync(user.Id, user.TenantId, null, ct);
-            if (string.IsNullOrWhiteSpace(context.OrganizationId))
-                return new Error("Login.OrganizationUnavailable", "No Active Branch Available For Your Account.", ErrorType.Validation);
+            string? tenantId = null;
+            string? organizationId = null;
+            var role = user.SystemRole;
+            if (role == SystemUserRoleType.SuperAdmin)
+            {
+                // Platform access is verified in the central Users collection only.
+                await contextResolver.ValidatePlatformAdminAsync(user.Id, ct);
+            }
+            else
+            {
+                if (string.IsNullOrWhiteSpace(user.TenantId))
+                    return new Error("Login.TenantUnavailable", "Your Account Is Not Associated With A Tenant.", ErrorType.Validation);
+                var context = await contextResolver.ResolveAsync(user.Id, user.TenantId, null, ct);
+                if (string.IsNullOrWhiteSpace(context.OrganizationId))
+                    return new Error("Login.OrganizationUnavailable", "No Active Branch Available For Your Account.", ErrorType.Validation);
+                tenantId = context.TenantId;
+                organizationId = context.OrganizationId;
+                role = context.SystemUserRoleType;
+            }
             var issuedAt = DateTimeOffset.UtcNow;
             jwtSettings.Validate();
             var expiresAt = issuedAt.AddMinutes(jwtSettings.DurationInMinutes);
             return new LoginResponse
             {
-                Success = true, Token = GenerateJwtToken(user, context.OrganizationId, context.SystemUserRoleType, issuedAt, expiresAt),
-                UserId = user.Id, Email = user.Email, TenantId = context.TenantId,
-                OrganizationId = context.OrganizationId, Role = context.SystemUserRoleType.ToString(),
+                Success = true, Token = GenerateJwtToken(user, tenantId, organizationId, role, issuedAt, expiresAt),
+                UserId = user.Id, Email = user.Email, TenantId = tenantId,
+                OrganizationId = organizationId, Role = role.ToString(),
                 IssuedAtUtc = issuedAt, ExpiresAtUtc = expiresAt
             };
         }
@@ -69,19 +81,20 @@ public class LoginService(ILoginRepository loginRepository, IPasswordService pas
 
     private static Error InvalidCredentials() => new("Login.InvalidCredentials", "Invalid email or password.", ErrorType.Validation);
 
-    private string GenerateJwtToken(Users user, string organizationId, SystemUserRoleType role, DateTimeOffset issuedAt, DateTimeOffset expiresAt)
+    private string GenerateJwtToken(Users user, string? tenantId, string? organizationId, SystemUserRoleType role, DateTimeOffset issuedAt, DateTimeOffset expiresAt)
     {
         var handler = new JwtSecurityTokenHandler();
+        var identity = new ClaimsIdentity([
+            new Claim(JwtRegisteredClaimNames.Sub, user.Id),
+            new Claim(JwtRegisteredClaimNames.Email, user.Email),
+            new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
+            new Claim("type", "access"),
+            new Claim(ClaimTypes.Role, role.ToString())]);
+        if (tenantId is not null) identity.AddClaim(new Claim("tenantId", tenantId));
+        if (organizationId is not null) identity.AddClaim(new Claim("organizationId", organizationId));
         var descriptor = new SecurityTokenDescriptor
         {
-            Subject = new ClaimsIdentity([
-                new Claim(JwtRegisteredClaimNames.Sub, user.Id),
-                new Claim(JwtRegisteredClaimNames.Email, user.Email),
-                new Claim(JwtRegisteredClaimNames.Jti, Guid.NewGuid().ToString()),
-                new Claim("tenantId", user.TenantId!),
-                new Claim("organizationId", organizationId),
-                new Claim("type", "access"),
-                new Claim(ClaimTypes.Role, role.ToString())]),
+            Subject = identity,
             IssuedAt = issuedAt.UtcDateTime, NotBefore = issuedAt.UtcDateTime, Expires = expiresAt.UtcDateTime,
             Issuer = jwtSettings.Issuer, Audience = jwtSettings.Audience, TokenType = "at+jwt",
             SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(Encoding.UTF8.GetBytes(jwtSettings.Key)),
