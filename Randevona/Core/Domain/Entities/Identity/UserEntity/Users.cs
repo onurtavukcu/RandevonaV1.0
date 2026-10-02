@@ -20,6 +20,9 @@ namespace Domain.Entities.Identity.UserEntity
         public UserStatus UserStatus { get; set; } = UserStatus.Active;
         public bool HasAllOrganizationAccess { get; set; } 
         public List<UserOrganizationMembership> Memberships { get; set; } = new();
+        public string? ReviewedByUserId { get; set; }
+        public DateTime? ReviewedAtUtc { get; set; }
+        public string? RejectionReason { get; set; }
     }
 }
 

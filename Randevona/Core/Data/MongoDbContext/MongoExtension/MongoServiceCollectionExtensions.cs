@@ -3,6 +3,7 @@ using CommonServices.WorkContext.ContextHolderMiddleware;
 using Data.MongoDataEncryption;
 using Data.Repositories.BaseRepositories;
 using Data.Repositories.Identity.Login;
+using Data.Repositories.Identity.Management;
 using Data.Repositories.Identity.Registration;
 using Data.Repositories.MailTemplates;
 using Domain.Models.MongoEncriyption;
@@ -33,6 +34,7 @@ namespace Data.MongoDbContext.MongoExtension
             services.AddScoped<TenantProvisioningService>();
             services.AddScoped<IRegistrationRepository, RegistrationRepository>();
             services.AddScoped<ILoginRepository, LoginRepository>();
+            services.AddScoped<IManagementRepository, ManagementRepository>();
             services.AddScoped<IMongoDbContext, MongoDbContext>();
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped(typeof(IScopedRepository<>), typeof(ScopedRepository<>));

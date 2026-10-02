@@ -13,6 +13,7 @@ public static class IdentityServiceCollectionExtensions
         services.AddScoped<IPasswordService, PasswordService.PasswordService>();
         services.AddScoped<IRegisterService, RegisterService.RegisterService>();
         services.AddScoped<ILoginService, LoginService.LoginService>();
+        services.AddScoped<ManagementService.IManagementService, ManagementService.ManagementService>();
         services.AddScoped<SystemAdminSeeder>();
         services.AddHostedService<SystemAdminInitializerHostedService>();
         return services;
