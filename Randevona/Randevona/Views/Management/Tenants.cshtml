@@ -5,6 +5,7 @@
     <a class="btn" asp-action="Users" asp-route-status="PendingApproval">Pending applications</a>
 </div>
 <div class="card">
+    @if (ViewData["WorkspaceError"] is string error) { <div class="alert alert-warning m-3" role="alert">@error</div> }
     <div class="card-header"><h2 class="card-title">Businesses</h2><span class="ms-auto text-secondary">@Model.TotalCount total</span></div>
     <div class="table-responsive"><table class="table table-vcenter card-table management-table"><thead><tr><th>Business</th><th>Owner</th><th>Application</th><th>Setup</th><th></th></tr></thead><tbody>
     @foreach (var tenant in Model.Items)

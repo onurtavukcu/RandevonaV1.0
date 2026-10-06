@@ -26,4 +26,14 @@ The existing login service permits approved accounts and refuses rejected/pendin
 
 Build: 0 warnings/errors. 239 offline checks passed, including access denial, bounded pagination/search, decision validation, audit preservation, preparation retry and competing decisions. 82 existing HTTP checks and 27 new management HTTP checks passed using the real MVC/auth/services with in-memory Mongo. New registration -> approval -> successful login and registration -> rejection -> denied login were verified. Tenant list and review forms were inspected in the browser. These tests do not replace a real Mongo server concurrency/integration test. No real Atlas documents were changed.
 
-Platform Settings, Package Settings and Reports remain page shells. Selecting a customer tenant for WhatsApp operations, account suspension/reactivation, emails and broader audit history are separate work.
+Platform Settings, Package Settings and Reports remain page shells. Account suspension/reactivation, emails and broader audit history are separate work. Customer workspace selection is described below.
+
+## Explicit administrator workspace — 2026-10-06
+
+GET /management/tenants/{id}/workspace lists active branches only for a ready, active business with an approved, active owner. POST to the same route validates the branch and writes separate managed-tenant/managed-organization claims into the authenticated cookie. The actual administrator ID, role, session expiry and persistence preference are retained. There is no customer impersonation and no automatic first-branch selection. POST /management/workspace/clear removes the selection.
+
+Shared workspace GET pages revalidate the selection and populate a branch-limited TenantWorkContext. Management pages remain central. Invalid/revoked selections redirect GET pages to tenant selection without silently choosing a different business; protected mutations are denied. Ordinary tenant claims, headers or raw IDs cannot select an administrator workspace. Logout or a fresh login clears the selection. Selection is browser-session wide; tenant operation forms also submit expected tenant/branch IDs to detect stale tabs.
+
+TenantOperationAttribute is an explicit opt-in for implemented tenant operations, currently Connections Save and CheckAccess. It is not a blanket permission for all admin POSTs. Anti-forgery and service validation remain mandatory. See WhatsApp-Connections.md.
+
+Latest verification: solution build has zero warnings/errors; 294 offline and 141 HTTP checks pass using in-memory Mongo and mocked Meta HTTP only. No live Atlas or Meta account changes were made.

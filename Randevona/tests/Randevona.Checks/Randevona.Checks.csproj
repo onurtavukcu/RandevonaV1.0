@@ -10,5 +10,6 @@
     <ProjectReference Include="../../Core/Data/Data.csproj" />
     <ProjectReference Include="../../Core/Infrastructure/Infrastructure.csproj" />
     <ProjectReference Include="../../Services/IdentityService/IdentityService.csproj" />
+    <ProjectReference Include="../../Services/BussinessServices/BussinessServices.csproj" />
   </ItemGroup>
 </Project>

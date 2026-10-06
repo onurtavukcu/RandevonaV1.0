@@ -1,5 +1,6 @@
 using Domain.Entities.BaseEntities;
 using Domain.Entities.Identity.UserEntity;
+using Domain.Entities.Whatsapp;
 using MongoDB.Driver;
 namespace Data.MongoDbContext;
 public interface IControlMongoDbContext
@@ -17,8 +18,8 @@ public sealed class ControlMongoDbContext : IControlMongoDbContext
     }
     public IMongoCollection<T> GetCollection<T>() where T : BaseEntity
     {
-        if (typeof(T) != typeof(Users) && typeof(T) != typeof(Tenants))
-            throw new InvalidOperationException("Only central account and tenant records belong to the control database.");
+        if (typeof(T) != typeof(Users) && typeof(T) != typeof(Tenants) && typeof(T) != typeof(ProviderNumberDirectory))
+            throw new InvalidOperationException("Only central accounts, tenants and number routing records belong to the control database.");
         return Database.GetCollection<T>(typeof(T).Name);
     }
 }

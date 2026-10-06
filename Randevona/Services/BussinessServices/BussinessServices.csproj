@@ -1,0 +1,12 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <TargetFramework>net10.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+  <ItemGroup>
+    <ProjectReference Include="../../Core/Data/Data.csproj" />
+    <ProjectReference Include="../CommonServices/CommonServices.csproj" />
+    <ProjectReference Include="../IntegrationServices/IntegrationServices.csproj" />
+  </ItemGroup>
+</Project>

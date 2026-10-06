@@ -6,6 +6,7 @@ using Data.Repositories.Identity.Login;
 using Data.Repositories.Identity.Management;
 using Data.Repositories.Identity.Registration;
 using Data.Repositories.MailTemplates;
+using Data.Repositories.Whatsapp;
 using Domain.Models.MongoEncriyption;
 using Microsoft.Extensions.DependencyInjection;
 using MongoDB.Driver;
@@ -35,6 +36,7 @@ namespace Data.MongoDbContext.MongoExtension
             services.AddScoped<IRegistrationRepository, RegistrationRepository>();
             services.AddScoped<ILoginRepository, LoginRepository>();
             services.AddScoped<IManagementRepository, ManagementRepository>();
+            services.AddScoped<IProviderDataRepository, ProviderDataRepository>();
             services.AddScoped<IMongoDbContext, MongoDbContext>();
             services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
             services.AddScoped(typeof(IScopedRepository<>), typeof(ScopedRepository<>));

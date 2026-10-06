@@ -3,8 +3,8 @@
 @{
     var admin = User.IsInRole(nameof(SystemUserRoleType.SuperAdmin));
     var workspace = ContextHolder.Value;
-    var tenantName = admin ? "Platform administration" : workspace?.TenantName ?? "Workspace";
-    var organizationName = admin ? "No business selected" : workspace?.OrganizationName ?? "Organization";
+    var tenantName = workspace?.TenantName ?? (admin ? "Platform administration" : "Workspace");
+    var organizationName = workspace?.OrganizationName ?? (admin ? "No business selected" : "Organization");
     var signedIn = User.Identity?.IsAuthenticated == true;
     var accountName = User.Identity?.Name ?? "Guest";
     var initial = accountName.Length > 0 ? accountName[..1].ToUpperInvariant() : "R";
@@ -52,6 +52,19 @@
                 </div>
             </header>
             <main id="main-content" class="workspace-content" tabindex="-1">
+                @if (admin)
+                {
+                    <div class="admin-workspace-bar">
+                        <span>@(workspace is null ? "Platform management" : $"Managing {workspace.TenantName} / {workspace.OrganizationName} as a platform administrator")</span>
+                        <div class="d-flex gap-2 flex-wrap">
+                            <a class="btn btn-sm" asp-controller="Management" asp-action="Tenants">Choose business</a>
+                            @if (User.HasClaim(x => x.Type == CommonServices.Authorization.AdminWorkspaceClaims.TenantId))
+                            {
+                                <form asp-controller="Management" asp-action="ClearWorkspace" method="post"><button class="btn btn-sm" type="submit">Stop managing</button></form>
+                            }
+                        </div>
+                    </div>
+                }
                 <div class="page-heading">
                     <div class="page-pretitle">@(ViewData["Section"] ?? "Workspace")</div>
                     <h1>@ViewData["Title"]</h1>

@@ -1,5 +1,93 @@
+@model Randevona.Models.Connections.ConnectionsViewModel
 @{
     ViewData["Title"] = "Connections";
     ViewData["Section"] = "Workspace";
+    var connections = Model.Connections;
+    var number = Model.Editing;
 }
-<partial name="_EmptyPage" />
+@if (Model.Error is not null)
+{
+    <div class="alert alert-danger" role="alert">@Model.Error</div>
+}
+@if (TempData["ConnectionNotice"] is string notice)
+{
+    <div class="alert alert-success" role="status">@notice</div>
+}
+@if (connections is null && Model.Error is null)
+{
+    <div class="card"><div class="card-body">
+        <h2 class="card-title">Choose a business</h2>
+        <p>Select an approved business and an active branch before managing WhatsApp connections.</p>
+        <a class="btn btn-primary" asp-controller="Management" asp-action="Tenants">Choose business</a>
+    </div></div>
+}
+else if (connections is not null)
+{
+    <div class="alert alert-info">Save your WhatsApp details, then check access to the account with Meta. This check does not register the number or confirm messaging readiness. Embedded Signup will be added separately.</div>
+    <div class="card mb-4">
+        <div class="card-header"><h2 class="card-title">WhatsApp numbers</h2></div>
+        @if (connections.Numbers.Count == 0)
+        {
+            <div class="card-body text-secondary">No WhatsApp numbers are configured for this branch.</div>
+        }
+        else
+        {
+            <div class="table-responsive"><table class="table card-table table-vcenter">
+                <thead><tr><th>Number</th><th>Phone number ID</th><th>Status</th><th>Access token</th><th></th></tr></thead>
+                <tbody>
+                @foreach (var item in connections.Numbers)
+                {
+                    <tr>
+                        <td>@item.PhoneNumber</td><td>@item.PhoneNumberId</td>
+                        <td>
+                            <span class="badge @(item.LastCheckedAt is null ? "bg-yellow-lt" : "bg-green-lt")">@(item.LastCheckedAt is null ? "Configured · Not verified" : "Account access checked")</span>
+                            @if (item.LastCheckedAt is { } checkedAt) { <div class="text-secondary small">@checkedAt.ToString("yyyy-MM-dd HH:mm") UTC</div> }
+                        </td>
+                        <td>@(item.HasAccessToken ? "Stored securely" : "Missing")</td>
+                        <td><div class="d-flex gap-2 align-items-center">
+                            <a asp-action="Index" asp-route-phoneNumberId="@item.PhoneNumberId">Edit</a>
+                            <form asp-action="CheckAccess" method="post">
+                                <input type="hidden" name="ExpectedTenantId" value="@connections.TenantId" />
+                                <input type="hidden" name="ExpectedOrganizationId" value="@connections.OrganizationId" />
+                                <input type="hidden" name="ExpectedVersion" value="@connections.Version" />
+                                <input type="hidden" name="PhoneNumberId" value="@item.PhoneNumberId" />
+                                <button class="btn btn-sm btn-outline-primary" type="submit">Check access</button>
+                            </form>
+                        </div></td>
+                    </tr>
+                }
+                </tbody>
+            </table></div>
+        }
+    </div>
+    <div class="card">
+        <div class="card-header"><h2 class="card-title">@(number is null ? "Add WhatsApp number" : "Edit WhatsApp number")</h2></div>
+        <div class="card-body">
+            <form asp-action="Save" method="post" autocomplete="off">
+                <input type="hidden" name="ExpectedTenantId" value="@connections.TenantId" />
+                <input type="hidden" name="ExpectedOrganizationId" value="@connections.OrganizationId" />
+                <input type="hidden" name="ExpectedVersion" value="@connections.Version" />
+                <div class="row g-3">
+                    <div class="col-md-6"><label class="form-label" for="PhoneNumber">Phone number</label>
+                        <input class="form-control" id="PhoneNumber" name="PhoneNumber" value="@number?.PhoneNumber" placeholder="+905551234567" maxlength="16" required /></div>
+                    <div class="col-md-6"><label class="form-label" for="PhoneNumberId">Phone number ID</label>
+                        <input class="form-control" id="PhoneNumberId" name="PhoneNumberId" value="@number?.PhoneNumberId" readonly="@(number is not null)" inputmode="numeric" pattern="[0-9]{5,30}" maxlength="30" required /></div>
+                    <div class="col-md-6"><label class="form-label" for="WabaId">WhatsApp Business Account ID</label>
+                        <input class="form-control" id="WabaId" name="WabaId" value="@number?.WabaId" readonly="@(number is not null)" inputmode="numeric" pattern="[0-9]{5,30}" maxlength="30" required /></div>
+                    <div class="col-md-6"><label class="form-label" for="MetaAppId">Meta app ID</label>
+                        <input class="form-control" id="MetaAppId" name="MetaAppId" value="@number?.MetaAppId" readonly="@(number is not null)" inputmode="numeric" pattern="[0-9]{5,30}" maxlength="30" required /></div>
+                    <div class="col-md-8"><label class="form-label" for="AccessToken">Access token</label>
+                        <input class="form-control" type="password" id="AccessToken" name="AccessToken" autocomplete="new-password" maxlength="8192" required="@(number is null)" aria-describedby="tokenHelp" />
+                        <small id="tokenHelp" class="form-hint">@(number is null ? "The token is encrypted before storage." : "Leave blank to keep the stored token. Existing tokens are never displayed.")</small></div>
+                    <div class="col-md-4"><label class="form-label" for="AccessTokenExpiresAt">Token expiry (UTC, optional)</label>
+                        <input class="form-control" type="datetime-local" step="1" id="AccessTokenExpiresAt" name="AccessTokenExpiresAt" value="@(number?.AccessTokenExpiresAt?.ToString("yyyy-MM-ddTHH:mm:ss"))" /></div>
+                </div>
+                <div class="mt-4 d-flex gap-2">
+                    <button class="btn btn-primary" type="submit">Save connection</button>
+                    @if (number is not null) { <a class="btn btn-outline-secondary" asp-action="Index">Cancel edit</a> }
+                </div>
+            </form>
+        </div>
+    </div>
+}
+

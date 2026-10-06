@@ -91,6 +91,8 @@ checks += await RegisterChecks.RunAsync(Key);
 checks += await LoginChecks.RunAsync(Key);
 checks += await SystemAdminChecks.RunAsync(Key);
 checks += await ManagementChecks.RunAsync(Key);
+checks += await ConnectionChecks.RunAsync(Key);
+checks += await MetaPhoneChecks.RunAsync();
 Console.WriteLine($"Completed {checks} offline checks; no database connections or writes.");
 
 public class InterfaceProxy : DispatchProxy

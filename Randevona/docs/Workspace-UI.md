@@ -20,7 +20,7 @@ No send/import/export/billing operations are implemented yet. Home and Managemen
 
 Management remains protected with PlatformAdminAttribute. Its links are visible only to SuperAdmin. The new shared empty GET pages use WorkspacePageAttribute: platform administrators may view these without tenant context, but are validated against central Users on every request. This marker must not be used on future tenant data operations. Other protected endpoints still require tenant context. Customer requests continue through tenant/organization validation even for shared pages.
 
-TenantWorkContext now includes optional display names from the already validated tenant and selected organization. The header displays these names, not arbitrary claims or an additional database query. SuperAdmin sees Platform administration / No business selected. Organization switching and administrator tenant selection are not implemented.
+TenantWorkContext now includes optional display names from the already validated tenant and selected organization. The header displays these names, not arbitrary claims or an additional database query. SuperAdmin sees Platform administration / No business selected. Administrator tenant/branch selection is implemented through Management. Ordinary customer branch switching is still separate work.
 
 Static assets are anonymous short-circuit endpoints, so CSS/JS requests do not run tenant resolution. This fixes the unstyled admin pages without removing authentication from MVC pages.
 
@@ -31,3 +31,9 @@ Build: no warnings or errors. 208 offline checks passed, including shared-page a
 ## Tenant/user management follow-up
 
 The formerly empty tenant/user management area now includes lists, details, pending review, approve/reject and reviewer audit. See Management.md for routes, service/repository responsibilities and verification. Settings/package/report pages are still shells.
+
+## Connections and selected workspaces — 2026-10-06
+
+The header shows the selected business/branch for administrator workspace pages, with an explicit Stop managing action. Central Management screens still show Platform administration. Shared GET pages can now render scoped connection data after server validation; they do not authorize writes. TenantOperationAttribute is reserved for explicit implemented operations with their own service checks and anti-forgery protection.
+
+Connections now has a number list, manual setup/edit form and Meta account-access check. Only safe read models reach the view; tokens are write-only fields. See WhatsApp-Connections.md for the precise limits of the access check and upcoming onboarding work. Desktop Connections was visually inspected. Existing mobile navigation verification predates this form; the full new form has not yet had a mobile browser pass.

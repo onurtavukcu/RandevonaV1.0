@@ -36,3 +36,6 @@ public sealed record ManagedUserDetails(ManagedUser User, ManagedTenant? Tenant,
 public sealed record ManagedTenantDetails(ManagedTenant Tenant, ManagementPage<ManagedUser> Users);
 
 public enum ApplicationDecision { Approve = 1, Reject = 2 }
+
+public sealed record ManagedOrganization(string Id, string Name);
+public sealed record AdminWorkspaceOptions(string TenantId, string TenantName, IReadOnlyList<ManagedOrganization> Organizations);

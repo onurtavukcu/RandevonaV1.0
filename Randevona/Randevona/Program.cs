@@ -1,4 +1,6 @@
 using CommonServices.WorkContext.ContextHolderMiddleware;
+using BussinessServices.Extensions;
+using IntegrationServices.Extensions;
 using Data.MongoDbContext.MongoExtension;
 using Domain.Models.Identity.User.Settings;
 using Infrastructure.Extensions;
@@ -18,6 +20,8 @@ builder.Services.Configure<RequestLocalizationOptions>(options =>
 builder.Services.AddAppSettings(builder.Configuration);
 builder.Services.AddMongoPersistence();
 builder.Services.AddIdentityServices();
+builder.Services.AddBussinessServices();
+builder.Services.AddIntegrationServices();
 
 builder.Services
     .AddAuthentication(options =>

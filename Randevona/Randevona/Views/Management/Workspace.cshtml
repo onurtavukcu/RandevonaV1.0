@@ -1,0 +1,16 @@
+@model AdminWorkspaceOptions
+@{ ViewData["Title"] = "Choose branch"; ViewData["Section"] = "Management / " + Model.TenantName; }
+@if (ViewData["SelectionError"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+<section class="card"><div class="card-header"><h2 class="card-title">@Model.TenantName</h2></div><div class="card-body">
+    <p>Choose the branch you want to manage. You will remain signed in as a platform administrator.</p>
+    <form asp-action="SelectWorkspace" asp-route-id="@Model.TenantId" method="post">
+        <label for="organizationId" class="form-label">Organization</label>
+        <select class="form-select mb-3" id="organizationId" name="organizationId" required>
+            <option value="">Select a branch</option>
+            @foreach (var branch in Model.Organizations)
+            { <option value="@branch.Id">@branch.Name</option> }
+        </select>
+        <button class="btn btn-primary" type="submit">Open business workspace</button>
+        <a class="btn" asp-action="TenantDetails" asp-route-id="@Model.TenantId">Back to business</a>
+    </form>
+</div></section>

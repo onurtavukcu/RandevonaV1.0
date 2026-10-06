@@ -14,6 +14,23 @@ namespace IdentityService.ManagementService;
 public sealed class ManagementService(IManagementRepository repository, TenantProvisioningService provisioning,
     ITenantWorkContextResolver resolver, ILogger<ManagementService> logger) : IManagementService
 {
+    public Task<Result<AdminWorkspaceOptions>> GetWorkspaceAsync(string actorId, string tenantId, CancellationToken ct = default) =>
+        ExecuteAsync<AdminWorkspaceOptions>(actorId, async () =>
+        {
+            try { return await resolver.GetAdminWorkspaceAsync(actorId, tenantId, ct); }
+            catch (UnauthorizedAccessException) { return WorkspaceUnavailable(); }
+        }, ct);
+
+    public Task<Result<Domain.Models.Shared.WorkContext.TenantWorkContext>> SelectWorkspaceAsync(string actorId, string tenantId, string organizationId, CancellationToken ct = default) =>
+        ExecuteAsync<Domain.Models.Shared.WorkContext.TenantWorkContext>(actorId, async () =>
+        {
+            try { return await resolver.ResolveAdminAsync(actorId, tenantId, organizationId, ct); }
+            catch (UnauthorizedAccessException) { return WorkspaceUnavailable(); }
+        }, ct);
+
+    private static Error WorkspaceUnavailable() => new("Management.WorkspaceUnavailable",
+        "Select an approved, active business and an active branch belonging to it.", ErrorType.Validation);
+
     public Task<Result<ManagementPage<ManagedTenant>>> GetTenantsAsync(string actorId, ManagementQuery query, CancellationToken ct = default) =>
         ExecuteAsync<ManagementPage<ManagedTenant>>(actorId, async () =>
         {

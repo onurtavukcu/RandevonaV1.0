@@ -169,7 +169,8 @@ public static class TenantChecks
 
         var initializer = provider.GetServices<IHostedService>().Single();
         await initializer.StartAsync(default);
-        Check(fake.Indexes.Count == 4 && fake.Indexes.All(x => x.Db == controlName),
+        Check(fake.Indexes.Count == 5 && fake.Indexes.All(x => x.Db == controlName) &&
+            fake.Indexes.Any(x => x.Name == "ux_ProviderNumberDirectory_PhoneNumberId"),
             "Startup prepares only control indexes");
         fake.FailPing = true;
         await Reject(() => initializer.StartAsync(default), "Control DB failure stops startup");

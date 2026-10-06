@@ -1,6 +1,10 @@
 @model ManagedTenantDetails
 @{ ViewData["Title"] = Model.Tenant.Name; ViewData["Section"] = "Management / Tenants"; }
 <div class="management-toolbar"><a class="btn" asp-action="Tenants">Back to tenants</a><a class="btn" asp-action="Users" asp-route-tenantId="@Model.Tenant.Id">All business users</a></div>
+@if (Model.Tenant.IsActive && Model.Tenant.ProvisioningStatus == TenantProvisioningStatus.Active && Model.Tenant.Owner is { IsActive: true, Status: UserStatus.Active, Role: SystemUserRoleType.User })
+{
+    <p><a class="btn btn-primary" asp-action="Workspace" asp-route-id="@Model.Tenant.Id">Manage this business</a></p>
+}
 <div class="card"><div class="card-header"><h2 class="card-title">Business details</h2></div><div class="card-body"><dl class="management-details">
 <dt>Business name</dt><dd>@Model.Tenant.Name</dd><dt>Initial branch</dt><dd>@Model.Tenant.InitialOrganizationName</dd><dt>Database</dt><dd><code>@Model.Tenant.DatabaseName</code></dd>
 <dt>Setup status</dt><dd>@Model.Tenant.ProvisioningStatus</dd><dt>Business enabled</dt><dd>@(Model.Tenant.IsActive ? "Yes" : "No")</dd>
@@ -10,3 +14,4 @@
 </dl></div></div>
 @if (Model.Tenant.Owner is not null) { <partial name="_ReviewApplication" model="Model.Tenant.Owner" /> }
 <section class="card mt-4"><div class="card-header"><h2 class="card-title">Business users</h2><span class="ms-auto text-secondary">@Model.Users.TotalCount total</span></div><partial name="_UsersTable" model="Model.Users" />@if (Model.Users.HasNext) { <div class="card-footer"><a asp-action="Users" asp-route-tenantId="@Model.Tenant.Id">View all business users</a></div> }</section>
+

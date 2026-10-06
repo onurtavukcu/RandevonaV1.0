@@ -118,6 +118,10 @@ public sealed class MemoryMongo
                 if (args.OfType<IClientSessionHandle>().Any()) TransactionInsertCount++;
                 if (name == FailInsertCollection) throw new InvalidOperationException("Simulated insert failure");
                 var document = args.OfType<T>().Single()!.ToBsonDocument();
+                if (Indexes.Contains((db, name, "ux_ProviderNumberDirectory_PhoneNumberId")) &&
+                    rows.Any(row => row["PhoneNumberId"] == document["PhoneNumberId"])) throw DuplicateKey();
+                if (Indexes.Contains((db, name, "ux_ProviderData_Tenant_Organization")) &&
+                    rows.Any(row => row["TenantId"] == document["TenantId"] && row["OrganizationId"] == document["OrganizationId"])) throw DuplicateKey();
                 if (Indexes.Contains((db, name, "ux_Users_NormalizedEmail")) &&
                     rows.Any(row => row["NormalizedEmail"] == document["NormalizedEmail"]))
                     throw DuplicateKey();

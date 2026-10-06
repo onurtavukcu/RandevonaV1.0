@@ -5,6 +5,8 @@
     <Project Path="Core/Infrastructure/Infrastructure.csproj" />
   </Folder>
   <Folder Name="/Services/">
+    <Project Path="Services/IntegrationServices/IntegrationServices.csproj" />
+    <Project Path="Services/BussinessServices/BussinessServices.csproj" />
     <Project Path="Services/CommonServices/CommonServices.csproj" />
     <Project Path="Services/IdentityService/IdentityService.csproj" Id="25b0caf5-a117-4f1e-bc3b-f9f0b3ae80f1" />
   </Folder>

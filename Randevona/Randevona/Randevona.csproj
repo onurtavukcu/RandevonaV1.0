@@ -12,6 +12,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Core\Data\Data.csproj" />
+    <ProjectReference Include="..\Services\BussinessServices\BussinessServices.csproj" />
     <ProjectReference Include="..\Core\Domain\Domain.csproj" />
     <ProjectReference Include="..\Core\Infrastructure\Infrastructure.csproj" />
     <ProjectReference Include="..\Services\IdentityService\IdentityService.csproj" />

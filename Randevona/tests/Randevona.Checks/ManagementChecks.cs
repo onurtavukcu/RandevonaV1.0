@@ -1,3 +1,8 @@
+using CommonServices.Authorization;
+using CommonServices.WorkContext.ContextAccessor;
+using CommonServices.WorkContext.ContextHolderMiddleware;
+using Microsoft.AspNetCore.Http;
+using System.Security.Claims;
 using Data.MongoDbContext;
 using Data.MongoDbContext.MongoExtension;
 using Domain.Entities.Identity.UserEntity;
@@ -101,6 +106,39 @@ public static class ManagementChecks
         Check(page1.Items.Count==20 && page1.HasNext && page2.HasPrevious && !page1.Items.Select(x=>x.Id).Intersect(page2.Items.Select(x=>x.Id)).Any(), "User pagination is bounded and pages do not overlap");
         var deleted=Application("Deleted"); fake.Rows(db,nameof(Users)).Single(x=>x["_id"]==ObjectId.Parse(deleted.User.Id))["IsDeleted"]=true;
         Check((await management.GetUserAsync(admin.Id,deleted.User.Id)).Error?.Code=="Management.NotFound", "Deleted account excluded from management details");
+        var options = await management.GetWorkspaceAsync(admin.Id, application.Tenant.Id);
+        Check(options.IsSuccess && options.Value!.Organizations.Single().Id == application.Tenant.DefaultOrganizationId, "Workspace lists approved business branches");
+        Check(!(await management.GetWorkspaceAsync(application.User.Id, application.Tenant.Id)).IsSuccess, "Customer cannot choose a managed workspace");
+        Check(!(await management.GetWorkspaceAsync(admin.Id, rejected.Tenant.Id)).IsSuccess, "Rejected owner cannot be managed");
+        Check(!(await management.GetWorkspaceAsync(admin.Id, disabled.Tenant.Id)).IsSuccess, "Disabled business cannot be selected");
+        Check(!(await management.SelectWorkspaceAsync(admin.Id, application.Tenant.Id, "")).IsSuccess, "Workspace requires an explicit branch");
+        Check(!(await management.SelectWorkspaceAsync(admin.Id, application.Tenant.Id, failed.Tenant.DefaultOrganizationId)).IsSuccess, "Foreign branch cannot be selected");
+        var selected = (await management.SelectWorkspaceAsync(admin.Id, application.Tenant.Id, application.Tenant.DefaultOrganizationId)).Value!;
+        Check(selected.UserId == admin.Id && selected.SystemUserRoleType == SystemUserRoleType.SuperAdmin && !selected.HasAllOrganizationAccess && selected.AllowedOrganizationIds!.SequenceEqual(new[]{application.Tenant.DefaultOrganizationId}), "Selected workspace preserves admin actor and limits branch scope");
+        var resolver = scope.ServiceProvider.GetRequiredService<ITenantWorkContextResolver>();
+        async Task<(DefaultHttpContext Http, TenantWorkContextHolder Holder, bool Called)> Request(bool selection = true, bool central = false, string method = "GET")
+        {
+            var claims = new List<Claim> { new(ClaimTypes.NameIdentifier, admin.Id), new(ClaimTypes.Role, nameof(SystemUserRoleType.SuperAdmin)), new("tenantId", failed.Tenant.Id), new("organizationId", failed.Tenant.DefaultOrganizationId) };
+            if (selection) { claims.Add(new(AdminWorkspaceClaims.TenantId, application.Tenant.Id)); claims.Add(new(AdminWorkspaceClaims.OrganizationId, application.Tenant.DefaultOrganizationId)); }
+            var http = new DefaultHttpContext { User = new(new ClaimsIdentity(claims, "checks")) };
+            http.Request.Method = method; http.Request.Headers["X-Org-Id"] = failed.Tenant.DefaultOrganizationId;
+            http.SetEndpoint(new Endpoint(_ => Task.CompletedTask, new EndpointMetadataCollection(central ? (object)new PlatformAdminAttribute() : new WorkspacePageAttribute()), "checks"));
+            var holder = new TenantWorkContextHolder(); bool called = false;
+            await new TenantWorkContextMiddleware(_ => { called = true; return Task.CompletedTask; }).InvokeAsync(http, resolver, holder);
+            return (http, holder, called);
+        }
+        var scoped = await Request();
+        Check(scoped.Called && scoped.Holder.Value?.TenantId == application.Tenant.Id && scoped.Holder.Value.OrganizationId == application.Tenant.DefaultOrganizationId, "Admin selection ignores arbitrary headers and legacy claims");
+        var central = await Request(central:true);
+        Check(central.Called && central.Holder.Value is null, "Management stays central with a selected business");
+        var unselected = await Request(selection:false);
+        Check(unselected.Called && unselected.Holder.Value is null, "Headers and normal tenant claims cannot select an admin workspace");
+        var deniedPost = await Request(method:"POST");
+        Check(!deniedPost.Called && deniedPost.Http.Response.StatusCode == 403, "Workspace page marker never authorizes admin writes");
+        var branchRow = fake.Rows(application.Tenant.DatabaseName, nameof(Organizations)).Single(); branchRow["IsActive"] = false;
+        var revoked = await Request();
+        Check(!revoked.Called && revoked.Holder.Value is null && revoked.Http.Response.StatusCode == 302 && revoked.Http.Response.Headers.Location.ToString().Contains("selectionUnavailable=true"), "Revoked branch redirects without silently switching workspace");
+        branchRow["IsActive"] = true;
         fake.Rows(db,nameof(Users)).Single(x=>x["_id"]==ObjectId.Parse(admin.Id))["UserStatus"]=(int)UserStatus.Suspended;
         Check((await management.GetTenantsAsync(admin.Id,new())).Error?.Code=="Management.Forbidden", "Suspended administrator loses service access");
         return count;

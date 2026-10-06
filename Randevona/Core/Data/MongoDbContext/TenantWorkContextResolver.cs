@@ -3,6 +3,7 @@ using Domain.Entities.Identity.UserEntity;
 using Domain.Models.Identity.Tenant;
 using Domain.Models.Identity.User.UserInformation;
 using Domain.Models.Shared.WorkContext;
+using Domain.Models.Identity.Management;
 using MongoDB.Bson;
 using MongoDB.Driver;
 
@@ -20,6 +21,34 @@ public sealed class TenantWorkContextResolver : ITenantWorkContextResolver
         if (!ObjectId.TryParse(userId, out _) || !await _control.GetCollection<Users>().Find(x => x.Id == userId &&
             x.SystemRole == SystemUserRoleType.SuperAdmin && x.IsActive && !x.IsDeleted && x.UserStatus == UserStatus.Active).AnyAsync(ct))
             throw new UnauthorizedAccessException("Platform administrator access is unavailable.");
+    }
+
+    public async Task<AdminWorkspaceOptions> GetAdminWorkspaceAsync(string userId, string tenantId, CancellationToken ct)
+    {
+        await ValidatePlatformAdminAsync(userId, ct);
+        if (!ObjectId.TryParse(tenantId, out _)) throw new UnauthorizedAccessException("Invalid business identifier.");
+        var tenant = await _control.GetCollection<Tenants>().Find(x => x.Id == tenantId && x.IsActive && !x.IsDeleted &&
+            x.ProvisioningStatus == TenantProvisioningStatus.Active).FirstOrDefaultAsync(ct)
+            ?? throw new UnauthorizedAccessException("The business is not ready or is disabled.");
+        if (!ObjectId.TryParse(tenant.OwnerUserId, out _) || !await _control.GetCollection<Users>().Find(x => x.Id == tenant.OwnerUserId &&
+            x.TenantId == tenantId && x.SystemRole == SystemUserRoleType.User && x.UserStatus == UserStatus.Active && x.IsActive && !x.IsDeleted).AnyAsync(ct))
+            throw new UnauthorizedAccessException("The business owner's application must be approved and active.");
+        await TenantDatabaseNaming.ValidateAsync(tenant, _control, _settings.TenantDatabasePrefix, ct);
+        var branches = await _client.GetDatabase(tenant.DatabaseName).GetCollection<Organizations>(nameof(Organizations))
+            .Find(x => x.TenantId == tenantId && x.IsActive && !x.IsDeleted).SortBy(x => x.Id).ToListAsync(ct);
+        if (branches.Count == 0) throw new UnauthorizedAccessException("No active branch is available.");
+        return new(tenant.Id, tenant.CompanyInfos.CompanyName,
+            branches.Select(x => new ManagedOrganization(x.Id, x.OrganizationInfos.OrganizationName)).ToArray());
+    }
+
+    public async Task<TenantWorkContext> ResolveAdminAsync(string userId, string tenantId, string organizationId, CancellationToken ct)
+    {
+        var options = await GetAdminWorkspaceAsync(userId, tenantId, ct);
+        var branch = options.Organizations.FirstOrDefault(x => x.Id == organizationId)
+            ?? throw new UnauthorizedAccessException("Select an active branch belonging to this business.");
+        // Preserve the actual actor. A selected branch does not grant an unbounded tenant-wide scope.
+        return new TenantWorkContext(tenantId, branch.Id, userId, SystemUserRoleType.SuperAdmin,
+            AllowedOrganizationIds: Array.AsReadOnly(new[] { branch.Id }), TenantName: options.TenantName, OrganizationName: branch.Name);
     }
 
     public async Task<TenantWorkContext> ResolveAsync(string userId, string tenantId, string? selectedOrganizationId, CancellationToken ct)
