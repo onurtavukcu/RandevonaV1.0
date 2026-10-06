@@ -1,7 +1,7 @@
 @{
     var controller = ViewContext.RouteData.Values["controller"]?.ToString() ?? "";
     var action = ViewContext.RouteData.Values["action"]?.ToString() ?? "";
-    bool Active(string c, string a = "Index") => controller.Equals(c, StringComparison.OrdinalIgnoreCase) && action.Equals(a, StringComparison.OrdinalIgnoreCase);
+    bool Active(string c, string a = "Index") => controller.Equals(c, StringComparison.OrdinalIgnoreCase) && (action.Equals(a, StringComparison.OrdinalIgnoreCase) || (c == "Management" && ((a == "Tenants" && action == "TenantDetails") || (a == "Users" && action == "UserDetails"))));
     var groups = new[]
     {
         (Label: "Template", Controller: "Template", Links: new[] { ("TemplateList", "Template List"), ("CreateTemplate", "New Template") }),
@@ -47,7 +47,7 @@
             <details class="menu-group" open="@(controller == "Management")">
                 <summary class="menu-link @(controller == "Management" ? "section-active" : "")"><partial name="_NavIcon" model='@("settings")' /><span>Management</span><span class="menu-chevron" aria-hidden="true"></span></summary>
                 <div class="submenu management-links">
-                    @foreach (var item in new[] { ("PlatformSettings", "Platform Settings"), ("PackageSettings", "Package Settings"), ("Reports", "Reports") })
+                    @foreach (var item in new[] { ("Tenants", "Tenants"), ("Users", "Users"), ("PlatformSettings", "Platform Settings"), ("PackageSettings", "Package Settings"), ("Reports", "Reports") })
                     {
                         <a class="submenu-link @(Active("Management", item.Item1) ? "active" : "")" asp-controller="Management" asp-action="@item.Item1" aria-current="@(Active("Management", item.Item1) ? "page" : null)">@item.Item2</a>
                     }
@@ -57,3 +57,4 @@
     </nav>
     <div class="sidebar-footer"><span class="sidebar-dot"></span><span>Appointments made easier.</span></div>
 </aside>
+

@@ -1,0 +1,17 @@
+@model ManagedUserDetails
+@{ ViewData["Title"] = "User details"; ViewData["Section"] = "Management"; }
+<div class="management-toolbar"><a class="btn" asp-action="Users">Back to users</a>@if (Model.Tenant is not null) { <a class="btn" asp-action="TenantDetails" asp-route-id="@Model.Tenant.Id">View business</a> }</div>
+@if (TempData["ManagementNotice"] is string notice) { <div class="alert alert-success" role="status">@notice</div> }
+@if (ViewData["ReviewError"] is string error) { <div class="alert alert-danger" role="alert">@error</div> }
+<div class="card"><div class="card-header"><h2 class="card-title">@Model.User.Name</h2><span class="ms-auto"><partial name="_UserStatus" model="Model.User.Status" /></span></div><div class="card-body">
+<dl class="management-details">
+<dt>Email</dt><dd>@Model.User.Email</dd><dt>Role</dt><dd>@Model.User.Role</dd><dt>Account enabled</dt><dd>@(Model.User.IsActive ? "Yes" : "No")</dd>
+<dt>Tenant</dt><dd>@(Model.Tenant?.Name ?? (Model.User.Role == SystemUserRoleType.SuperAdmin ? "Platform account" : "Unavailable business"))</dd>
+<dt>Business setup</dt><dd>@(Model.Tenant?.ProvisioningStatus.ToString() ?? "Not applicable")</dd>
+<dt>Branch access</dt><dd>@(Model.User.Role == SystemUserRoleType.SuperAdmin ? "Not applicable" : Model.HasAllOrganizationAccess ? "All business branches" : $"{Model.OrganizationCount} assigned branches")</dd>
+<dt>Registered (UTC)</dt><dd>@Model.User.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+<dt>Reviewed by</dt><dd>@(Model.Reviewer?.Email ?? Model.User.ReviewedByUserId ?? "Not reviewed")</dd>
+<dt>Reviewed (UTC)</dt><dd>@(Model.User.ReviewedAtUtc?.ToString("yyyy-MM-dd HH:mm:ss") ?? "Not reviewed")</dd>
+@if (Model.User.RejectionReason is not null) { <dt>Rejection reason</dt><dd class="review-reason">@Model.User.RejectionReason</dd> }
+</dl></div></div>
+<partial name="_ReviewApplication" model="Model.User" />

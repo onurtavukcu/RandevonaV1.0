@@ -1,0 +1,17 @@
+@model ManagementPage<ManagedUser>
+<div class="table-responsive">
+<table class="table table-vcenter card-table management-table">
+    <thead><tr><th>User</th><th>Tenant</th><th>Role</th><th>Status</th><th>Registered (UTC)</th><th></th></tr></thead>
+    <tbody>
+    @foreach (var user in Model.Items)
+    {
+        <tr><td><strong>@user.Name</strong><div class="text-secondary">@user.Email</div></td>
+            <td>@if (user.TenantId is not null) { <a asp-action="TenantDetails" asp-route-id="@user.TenantId">@(user.TenantName ?? "Unavailable business")</a> } else { <span class="text-secondary">Platform</span> }</td>
+            <td>@user.Role</td><td><partial name="_UserStatus" model="user.Status" /> @if (!user.IsActive) { <span class="badge bg-secondary-lt">Disabled</span> }</td>
+            <td class="text-secondary">@user.CreatedAt.ToString("yyyy-MM-dd HH:mm")</td>
+            <td><a asp-action="UserDetails" asp-route-id="@user.Id" class="btn btn-sm">@(user.CanReview ? "Review" : "View")<span class="visually-hidden"> @user.Email</span></a></td></tr>
+    }
+    @if (Model.Items.Count == 0) { <tr><td colspan="6" class="text-center text-secondary p-5">No users match these filters.</td></tr> }
+    </tbody>
+</table>
+</div>

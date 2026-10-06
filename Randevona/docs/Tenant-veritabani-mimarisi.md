@@ -90,3 +90,7 @@ ManagementController uses PlatformAdminAttribute. Middleware checks the current 
 
 The Management landing page and blank Platform Settings, Package Settings and Reports pages are present. Shared read-only WorkspacePage GET endpoints permit a validated platform administrator without a tenant context. Customer approval, tenant listing, settings business logic and explicit tenant selection remain TODO. See Workspace-UI.md for routes and authorization boundaries. No actual Atlas data was changed during implementation; HTTP checks use in-memory Mongo and real MVC authentication.
 
+
+## Management application review
+
+Tenant/user lists, details and pending application approval/rejection are implemented; see Management.md. Account approval is stored on Users and must not be confused with Tenants.ProvisioningStatus. No additional database is created for the platform administrator.

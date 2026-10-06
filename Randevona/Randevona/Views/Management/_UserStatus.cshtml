@@ -1,0 +1,6 @@
+@model UserStatus
+@{
+    var label = Model == UserStatus.PendingApproval ? "Pending approval" : Model.ToString();
+    var color = Model switch { UserStatus.Active => "success", UserStatus.PendingApproval => "warning", UserStatus.Rejected => "danger", _ => "secondary" };
+}
+<span class="badge bg-@color-lt">@label</span>

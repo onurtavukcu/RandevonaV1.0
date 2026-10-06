@@ -217,6 +217,14 @@ public sealed class MemoryMongo
             if (field.Name == "$and") { if (!field.Value.AsBsonArray.All(x => Matches(row, x.AsBsonDocument))) return false; continue; }
             if (field.Name == "$or") { if (!field.Value.AsBsonArray.Any(x => Matches(row, x.AsBsonDocument))) return false; continue; }
             var value = Value(row, field.Name);
+            if (field.Value.IsBsonRegularExpression)
+            {
+                var regex = field.Value.AsBsonRegularExpression;
+                if (!value.IsString || !System.Text.RegularExpressions.Regex.IsMatch(value.AsString, regex.Pattern,
+                    regex.Options.Contains('i') ? System.Text.RegularExpressions.RegexOptions.IgnoreCase : System.Text.RegularExpressions.RegexOptions.None,
+                    TimeSpan.FromSeconds(1))) return false;
+                continue;
+            }
             if (!field.Value.IsBsonDocument) { if (value != field.Value) return false; continue; }
             foreach (var operation in field.Value.AsBsonDocument)
             {

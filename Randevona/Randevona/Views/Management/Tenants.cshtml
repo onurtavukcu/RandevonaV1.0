@@ -1,0 +1,23 @@
+@model ManagementPage<ManagedTenant>
+@{ ViewData["Title"] = "Tenants"; ViewData["Section"] = "Management"; }
+<div class="management-toolbar">
+    <form method="get" asp-action="Tenants" class="management-filters"><div><label for="search" class="form-label">Business name</label><input id="search" name="Search" value="@Model.Query.Search" maxlength="200" class="form-control" placeholder="Search businesses" /></div><button class="btn btn-primary" type="submit">Search</button><a class="btn" asp-action="Tenants">Reset</a></form>
+    <a class="btn" asp-action="Users" asp-route-status="PendingApproval">Pending applications</a>
+</div>
+<div class="card">
+    <div class="card-header"><h2 class="card-title">Businesses</h2><span class="ms-auto text-secondary">@Model.TotalCount total</span></div>
+    <div class="table-responsive"><table class="table table-vcenter card-table management-table"><thead><tr><th>Business</th><th>Owner</th><th>Application</th><th>Setup</th><th></th></tr></thead><tbody>
+    @foreach (var tenant in Model.Items)
+    {
+        <tr><td><strong>@tenant.Name</strong><div class="text-secondary">@tenant.InitialOrganizationName</div>@if (!tenant.IsActive) { <span class="badge bg-secondary-lt">Disabled</span> }</td>
+            <td>@(tenant.Owner?.Email ?? "Owner unavailable")</td><td>@if (tenant.Owner is not null) { <partial name="_UserStatus" model="tenant.Owner.Status" /> } else { <span class="text-secondary">Unavailable</span> }</td>
+            <td><span class="badge @(tenant.ProvisioningStatus == TenantProvisioningStatus.Active ? "bg-success-lt" : "bg-warning-lt")">@(tenant.ProvisioningStatus == TenantProvisioningStatus.Active ? "Ready" : tenant.ProvisioningStatus.ToString())</span></td>
+            <td><a class="btn btn-sm" asp-action="TenantDetails" asp-route-id="@tenant.Id">View<span class="visually-hidden"> @tenant.Name</span></a></td></tr>
+    }
+    @if (Model.Items.Count == 0) { <tr><td colspan="5" class="text-center text-secondary p-5">No businesses match these filters.</td></tr> }
+    </tbody></table></div>
+    <div class="card-footer management-pagination"><span>Page @Model.Query.Page</span><div>
+    @if (Model.HasPrevious) { <a class="btn btn-sm" asp-action="Tenants" asp-route-page="@(Model.Query.Page - 1)" asp-route-search="@Model.Query.Search">Previous</a> }
+    @if (Model.HasNext) { <a class="btn btn-sm" asp-action="Tenants" asp-route-page="@(Model.Query.Page + 1)" asp-route-search="@Model.Query.Search">Next</a> }
+    </div></div>
+</div>

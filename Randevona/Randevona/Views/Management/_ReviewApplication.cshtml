@@ -1,0 +1,17 @@
+@model ManagedUser
+@if (Model.CanReview)
+{
+<section class="card mt-4"><div class="card-header"><h2 class="card-title">Review application</h2></div><div class="card-body">
+    <p>Review the application for <strong>@Model.Email</strong>. Approval enables sign-in once the business and branch are ready.</p>
+    <form asp-action="Review" asp-route-id="@Model.Id" method="post" class="mb-4">
+        <input type="hidden" name="Decision" value="Approve" /><button class="btn btn-success" type="submit">Approve application</button>
+    </form>
+    <form asp-action="Review" asp-route-id="@Model.Id" method="post">
+        <input type="hidden" name="Decision" value="Reject" />
+        <label for="rejection-reason" class="form-label">Rejection reason</label>
+        <textarea id="rejection-reason" name="Reason" class="form-control" rows="3" maxlength="1000" required aria-describedby="rejection-help">@ViewData["ReviewReason"]</textarea>
+        <div class="form-hint mb-3" id="rejection-help">Required for rejection. The decision and your administrator identity will be recorded.</div>
+        <button class="btn btn-outline-danger" type="submit">Reject application</button>
+    </form>
+</div></section>
+}

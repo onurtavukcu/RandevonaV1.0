@@ -1,0 +1,4 @@
+@model Domain.Models.Shared.Result.Error
+@{ ViewData["Title"] = "Management"; ViewData["Section"] = "Administration"; }
+<div class="alert alert-danger" role="alert">@Model.Message</div>
+<a class="btn" asp-action="Index">Back to management</a>

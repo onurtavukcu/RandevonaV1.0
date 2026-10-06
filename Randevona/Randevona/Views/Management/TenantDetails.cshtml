@@ -1,0 +1,12 @@
+@model ManagedTenantDetails
+@{ ViewData["Title"] = Model.Tenant.Name; ViewData["Section"] = "Management / Tenants"; }
+<div class="management-toolbar"><a class="btn" asp-action="Tenants">Back to tenants</a><a class="btn" asp-action="Users" asp-route-tenantId="@Model.Tenant.Id">All business users</a></div>
+<div class="card"><div class="card-header"><h2 class="card-title">Business details</h2></div><div class="card-body"><dl class="management-details">
+<dt>Business name</dt><dd>@Model.Tenant.Name</dd><dt>Initial branch</dt><dd>@Model.Tenant.InitialOrganizationName</dd><dt>Database</dt><dd><code>@Model.Tenant.DatabaseName</code></dd>
+<dt>Setup status</dt><dd>@Model.Tenant.ProvisioningStatus</dd><dt>Business enabled</dt><dd>@(Model.Tenant.IsActive ? "Yes" : "No")</dd>
+<dt>Owner</dt><dd>@if (Model.Tenant.Owner is not null) { <a asp-action="UserDetails" asp-route-id="@Model.Tenant.Owner.Id">@Model.Tenant.Owner.Email</a> } else { <span>Owner unavailable</span> }</dd>
+<dt>Application</dt><dd>@if (Model.Tenant.Owner is not null) { <partial name="_UserStatus" model="Model.Tenant.Owner.Status" /> } else { <span>Unavailable</span> }</dd>
+<dt>Registered (UTC)</dt><dd>@Model.Tenant.CreatedAt.ToString("yyyy-MM-dd HH:mm:ss")</dd>
+</dl></div></div>
+@if (Model.Tenant.Owner is not null) { <partial name="_ReviewApplication" model="Model.Tenant.Owner" /> }
+<section class="card mt-4"><div class="card-header"><h2 class="card-title">Business users</h2><span class="ms-auto text-secondary">@Model.Users.TotalCount total</span></div><partial name="_UsersTable" model="Model.Users" />@if (Model.Users.HasNext) { <div class="card-footer"><a asp-action="Users" asp-route-tenantId="@Model.Tenant.Id">View all business users</a></div> }</section>

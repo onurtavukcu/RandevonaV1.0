@@ -3,8 +3,10 @@
     ViewData["Section"] = "Administration";
 }
 <div class="workspace-cards management-cards">
-    @foreach (var item in new[] { ("PlatformSettings", "Platform Settings", "settings"), ("PackageSettings", "Package Settings", "card"), ("Reports", "Reports", "chart") })
+    @foreach (var item in new[] { ("Tenants", "Tenants", "building"), ("Users", "Users", "contacts"), ("PlatformSettings", "Platform Settings", "settings"), ("PackageSettings", "Package Settings", "card"), ("Reports", "Reports", "chart") })
     {
         <a class="card workspace-card" asp-controller="Management" asp-action="@item.Item1"><span class="tool-icon"><partial name="_NavIcon" model="item.Item3" /></span><h2>@item.Item2</h2><span class="card-link">Open <partial name="_NavIcon" model='@("arrow")' /></span></a>
     }
 </div>
+
+<div class="mt-4"><a class="btn btn-primary" asp-action="Users" asp-route-status="PendingApproval">Review pending applications</a></div>

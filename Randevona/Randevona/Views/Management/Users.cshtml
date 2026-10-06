@@ -1,0 +1,19 @@
+@model ManagementPage<ManagedUser>
+@{ ViewData["Title"] = "Users"; ViewData["Section"] = "Management"; }
+<div class="management-toolbar">
+<form method="get" asp-action="Users" class="management-filters">
+    <input type="hidden" name="TenantId" value="@Model.Query.TenantId" />
+    <div><label for="search" class="form-label">Email</label><input id="search" name="Search" value="@Model.Query.Search" maxlength="200" class="form-control" placeholder="Search by email" /></div>
+    <div><label for="status" class="form-label">Status</label><select id="status" name="Status" class="form-select"><option value="">All statuses</option>@foreach (var status in Enum.GetValues<UserStatus>()) { <option value="@status" selected="@(Model.Query.Status == status)">@(status == UserStatus.PendingApproval ? "Pending approval" : status.ToString())</option> }</select></div>
+    <button class="btn btn-primary" type="submit">Filter</button><a class="btn" asp-action="Users">Reset</a>
+</form>
+<a class="btn" asp-action="Users" asp-route-status="PendingApproval">Pending applications</a>
+</div>
+@if (Model.Query.TenantId is not null) { <p class="text-secondary">Filtered to one business. <a asp-action="TenantDetails" asp-route-id="@Model.Query.TenantId">View business</a></p> }
+<div class="card">
+<div class="card-header"><h2 class="card-title">Accounts</h2><span class="ms-auto text-secondary">@Model.TotalCount total</span></div>
+<partial name="_UsersTable" model="Model" />
+<div class="card-footer management-pagination"><span>Page @Model.Query.Page</span><div>
+@if (Model.HasPrevious) { <a class="btn btn-sm" asp-action="Users" asp-route-page="@(Model.Query.Page - 1)" asp-route-search="@Model.Query.Search" asp-route-status="@Model.Query.Status" asp-route-tenantId="@Model.Query.TenantId">Previous</a> }
+@if (Model.HasNext) { <a class="btn btn-sm" asp-action="Users" asp-route-page="@(Model.Query.Page + 1)" asp-route-search="@Model.Query.Search" asp-route-status="@Model.Query.Status" asp-route-tenantId="@Model.Query.TenantId">Next</a> }
+</div></div></div>

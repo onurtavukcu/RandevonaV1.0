@@ -27,3 +27,7 @@ Static assets are anonymous short-circuit endpoints, so CSS/JS requests do not r
 ## Verification — 2026-10-02
 
 Build: no warnings or errors. 208 offline checks passed, including shared-page authorization and role revocation. 82 HTTP checks passed using in-memory Mongo: all menu pages, customer management denial, real tenant/organization header labels, cookie login/logout and CSS/JS loading for anonymous/customer/admin sessions. Desktop and 390px mobile navigation were inspected in the browser. No real Atlas data was modified.
+
+## Tenant/user management follow-up
+
+The formerly empty tenant/user management area now includes lists, details, pending review, approve/reject and reviewer audit. See Management.md for routes, service/repository responsibilities and verification. Settings/package/report pages are still shells.
